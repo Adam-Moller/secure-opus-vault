@@ -53,10 +53,11 @@ const Index = () => {
     });
   };
 
-  const handleCreateNew = (newPassword: string, fileName: string) => {
+  const handleCreateNew = async (newPassword: string, fileName: string) => {
     setPassword(newPassword);
     setCurrentFileName(fileName);
-    setOpportunities([]);
+    const emptyOpportunities: Opportunity[] = [];
+    setOpportunities(emptyOpportunities);
     setIsLoggedIn(true);
     
     // Add to registry
@@ -67,10 +68,29 @@ const Index = () => {
       opportunityCount: 0,
     });
     
-    toast({
-      title: "New CRM Created",
-      description: `${fileName} is ready to use`,
-    });
+    // Save initial empty state to IndexedDB
+    try {
+      const now = new Date().toISOString();
+      const encryptedData: EncryptedData = {
+        fileName,
+        createdDate: now,
+        lastModified: now,
+        data: emptyOpportunities,
+      };
+      
+      await saveToIndexedDB(encryptedData, newPassword);
+      
+      toast({
+        title: "New CRM Created",
+        description: `${fileName} is ready to use`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Creation Error",
+        description: error.message || "Failed to create file",
+        variant: "destructive",
+      });
+    }
   };
 
   const saveData = async (data: Opportunity[], showToast = true) => {
