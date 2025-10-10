@@ -18,7 +18,9 @@ const emptyOpportunity: Omit<Opportunity, "id" | "dataCriacao" | "historicoInter
   nomeEmpresa: "",
   status: "Lead",
   valorPotencial: 0,
-  proximoPassoData: "",
+  primeiroContatoData: "",
+  ultimoContatoData: "",
+  proximoContatoData: "",
   contatoPrincipal: {
     nome: "",
     cargo: "",
@@ -37,7 +39,9 @@ export const OpportunityModal = ({ open, onClose, onSave, opportunity }: Opportu
         nomeEmpresa: opportunity.nomeEmpresa,
         status: opportunity.status,
         valorPotencial: opportunity.valorPotencial,
-        proximoPassoData: opportunity.proximoPassoData,
+        primeiroContatoData: opportunity.primeiroContatoData,
+        ultimoContatoData: opportunity.ultimoContatoData,
+        proximoContatoData: opportunity.proximoContatoData,
         contatoPrincipal: opportunity.contatoPrincipal,
         notasGerais: opportunity.notasGerais,
       });
@@ -112,13 +116,35 @@ export const OpportunityModal = ({ open, onClose, onSave, opportunity }: Opportu
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="proximoPassoData">Próximo Passo (Data) *</Label>
+              <Label htmlFor="primeiroContatoData">Primeiro Contato (Data) *</Label>
               <Input
-                id="proximoPassoData"
+                id="primeiroContatoData"
                 type="date"
                 required
-                value={formData.proximoPassoData}
-                onChange={(e) => setFormData({ ...formData, proximoPassoData: e.target.value })}
+                value={formData.primeiroContatoData}
+                onChange={(e) => setFormData({ ...formData, primeiroContatoData: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="ultimoContatoData">Último Contato (Data) *</Label>
+              <Input
+                id="ultimoContatoData"
+                type="date"
+                required
+                value={formData.ultimoContatoData}
+                onChange={(e) => setFormData({ ...formData, ultimoContatoData: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="proximoContatoData">Próximo Contato (Data) *</Label>
+              <Input
+                id="proximoContatoData"
+                type="date"
+                required
+                value={formData.proximoContatoData}
+                onChange={(e) => setFormData({ ...formData, proximoContatoData: e.target.value })}
               />
             </div>
           </div>

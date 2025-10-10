@@ -16,7 +16,9 @@ export interface Opportunity {
   nomeEmpresa: string;
   status: "Lead" | "Qualificado" | "Proposta" | "Negociação" | "Fechado" | "Perdido";
   valorPotencial: number;
-  proximoPassoData: string;
+  primeiroContatoData: string;
+  ultimoContatoData: string;
+  proximoContatoData: string;
   contatoPrincipal: Contact;
   dataCriacao: string;
   notasGerais: string;

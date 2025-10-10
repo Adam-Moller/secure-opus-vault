@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ChevronDown, ChevronUp, Edit, Trash2, MessageSquarePlus, Mail, Phone, User } from "lucide-react";
 import type { Opportunity } from "@/types/opportunity";
 import { format } from "date-fns";
@@ -36,14 +37,33 @@ export const OpportunityCard = ({ opportunity, onEdit, onDelete, onAddInteractio
                 {opportunity.status}
               </Badge>
             </div>
-            <div className="flex items-center gap-6 text-sm text-muted-foreground flex-wrap">
+            <div className="text-sm">
               <span className="font-medium text-foreground">
                 R$ {opportunity.valorPotencial.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
               </span>
-              <span>
-                Próximo passo: {format(new Date(opportunity.proximoPassoData), "dd/MM/yyyy")}
-              </span>
             </div>
+            <Table className="mt-3">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="h-8 text-xs">Primeiro Contato</TableHead>
+                  <TableHead className="h-8 text-xs">Último Contato</TableHead>
+                  <TableHead className="h-8 text-xs">Próximo Contato</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell className="py-2 text-sm">
+                    {format(new Date(opportunity.primeiroContatoData), "dd/MM/yyyy")}
+                  </TableCell>
+                  <TableCell className="py-2 text-sm">
+                    {format(new Date(opportunity.ultimoContatoData), "dd/MM/yyyy")}
+                  </TableCell>
+                  <TableCell className="py-2 text-sm">
+                    {format(new Date(opportunity.proximoContatoData), "dd/MM/yyyy")}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
           </div>
           <Button
             variant="ghost"
