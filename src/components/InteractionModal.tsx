@@ -10,12 +10,13 @@ import type { Interaction } from "@/types/opportunity";
 interface InteractionModalProps {
   open: boolean;
   onClose: () => void;
-  onSave: (interaction: Interaction) => void;
+  onSave: (interaction: Interaction, nextContactDate?: string) => void;
 }
 
 export const InteractionModal = ({ open, onClose, onSave }: InteractionModalProps) => {
   const [tipo, setTipo] = useState("Ligação");
   const [resumo, setResumo] = useState("");
+  const [proximoContato, setProximoContato] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,9 +27,10 @@ export const InteractionModal = ({ open, onClose, onSave }: InteractionModalProp
       resumo,
     };
 
-    onSave(interaction);
+    onSave(interaction, proximoContato || undefined);
     setTipo("Ligação");
     setResumo("");
+    setProximoContato("");
     onClose();
   };
 
@@ -65,6 +67,16 @@ export const InteractionModal = ({ open, onClose, onSave }: InteractionModalProp
               value={resumo}
               onChange={(e) => setResumo(e.target.value)}
               placeholder="Descreva o que foi discutido..."
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="proximoContato">Próximo Contato (Opcional)</Label>
+            <Input
+              id="proximoContato"
+              type="date"
+              value={proximoContato}
+              onChange={(e) => setProximoContato(e.target.value)}
             />
           </div>
 

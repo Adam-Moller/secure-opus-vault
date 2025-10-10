@@ -95,12 +95,14 @@ const Index = () => {
     });
   };
 
-  const handleAddInteraction = (interaction: Interaction) => {
+  const handleAddInteraction = (interaction: Interaction, nextContactDate?: string) => {
     if (!selectedOpportunity) return;
 
     const updatedOpportunity = {
       ...selectedOpportunity,
       historicoInteracoes: [...selectedOpportunity.historicoInteracoes, interaction],
+      ultimoContatoData: interaction.data,
+      ...(nextContactDate && { proximoContatoData: nextContactDate }),
     };
 
     handleSaveOpportunity(updatedOpportunity);

@@ -6,6 +6,14 @@ const DEFAULT_FILENAME = "crm-data.enc";
 
 // Check if File System Access API is supported
 export const isFileSystemSupported = () => {
+  // Check if we're in an iframe (Lovable preview)
+  const isInIframe = window.self !== window.top;
+  
+  // File System API doesn't work in iframes due to security
+  if (isInIframe) {
+    return false;
+  }
+  
   return "showSaveFilePicker" in window && "showOpenFilePicker" in window;
 };
 
