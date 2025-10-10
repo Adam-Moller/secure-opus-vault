@@ -26,5 +26,8 @@ export interface Opportunity {
 }
 
 export interface EncryptedData {
+  fileName: string;
+  createdDate: string;
+  lastModified: string;
   data: Opportunity[];
 }

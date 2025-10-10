@@ -9,11 +9,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Download, LogOut, Save, Search } from "lucide-react";
 import type { Opportunity, EncryptedData, Interaction } from "@/types/opportunity";
-import { isFileSystemSupported, saveToFileSystem, downloadEncryptedFile } from "@/utils/fileStorage";
+import {
+  isFileSystemSupported,
+  saveToFileSystem,
+  downloadEncryptedFile,
+  saveToIndexedDB,
+} from "@/utils/fileStorage";
+import { addFileToRegistry, updateFileInRegistry } from "@/utils/fileRegistry";
 
 const Index = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [password, setPassword] = useState("");
+  const [currentFileName, setCurrentFileName] = useState("");
   const [fileHandle, setFileHandle] = useState<FileSystemFileHandle | undefined>();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,33 +29,62 @@ const Index = () => {
   const [isInteractionModalOpen, setIsInteractionModalOpen] = useState(false);
   const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | undefined>();
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | undefined>();
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
   const { toast } = useToast();
   const supportsFileSystem = isFileSystemSupported();
 
   const handleLogin = (data: EncryptedData, loginPassword: string, handle?: FileSystemFileHandle) => {
     setPassword(loginPassword);
+    setCurrentFileName(data.fileName);
     setFileHandle(handle);
     setOpportunities(data.data);
     setIsLoggedIn(true);
+    
+    // Update registry
+    updateFileInRegistry(data.fileName, {
+      lastOpened: new Date().toISOString(),
+      opportunityCount: data.data.length,
+      lastModified: data.lastModified,
+    });
+    
     toast({
       title: "Login Successful",
-      description: `Loaded ${data.data.length} opportunities`,
+      description: `Loaded ${data.data.length} opportunities from ${data.fileName}`,
     });
   };
 
-  const handleCreateNew = (newPassword: string) => {
+  const handleCreateNew = (newPassword: string, fileName: string) => {
     setPassword(newPassword);
+    setCurrentFileName(fileName);
     setOpportunities([]);
     setIsLoggedIn(true);
+    
+    // Add to registry
+    addFileToRegistry({
+      fileName,
+      lastModified: new Date().toISOString(),
+      lastOpened: new Date().toISOString(),
+      opportunityCount: 0,
+    });
+    
     toast({
       title: "New CRM Created",
-      description: "You can now start adding opportunities",
+      description: `${fileName} is ready to use`,
     });
   };
 
-  const saveData = async (data: Opportunity[]) => {
+  const saveData = async (data: Opportunity[], showToast = true) => {
+    if (!currentFileName) return;
+    
+    setIsAutoSaving(true);
     try {
-      const encryptedData: EncryptedData = { data };
+      const now = new Date().toISOString();
+      const encryptedData: EncryptedData = {
+        fileName: currentFileName,
+        createdDate: now,
+        lastModified: now,
+        data,
+      };
       
       if (supportsFileSystem && fileHandle) {
         const newHandle = await saveToFileSystem(encryptedData, password, fileHandle);
@@ -57,19 +93,29 @@ const Index = () => {
         const newHandle = await saveToFileSystem(encryptedData, password);
         setFileHandle(newHandle);
       } else {
-        await downloadEncryptedFile(encryptedData, password);
+        await saveToIndexedDB(encryptedData, password);
       }
 
-      toast({
-        title: "Data Saved",
-        description: supportsFileSystem ? "File updated successfully" : "File downloaded successfully",
+      // Update registry
+      updateFileInRegistry(currentFileName, {
+        lastModified: now,
+        opportunityCount: data.length,
       });
+
+      if (showToast) {
+        toast({
+          title: "Data Saved",
+          description: supportsFileSystem ? "File updated successfully" : "Saved to local storage",
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Save Error",
         description: error.message || "Failed to save data",
         variant: "destructive",
       });
+    } finally {
+      setIsAutoSaving(false);
     }
   };
 
@@ -110,17 +156,55 @@ const Index = () => {
   };
 
   const handleLogout = () => {
-    if (confirm("Are you sure you want to logout? Make sure you've saved your data!")) {
+    if (confirm("Are you sure you want to logout? All changes are auto-saved.")) {
       setIsLoggedIn(false);
       setPassword("");
+      setCurrentFileName("");
       setFileHandle(undefined);
       setOpportunities([]);
     }
   };
 
   const handleManualSave = () => {
-    saveData(opportunities);
+    saveData(opportunities, true);
   };
+
+  const handleExportBackup = async () => {
+    if (!currentFileName) return;
+    
+    try {
+      const now = new Date().toISOString();
+      const encryptedData: EncryptedData = {
+        fileName: currentFileName,
+        createdDate: now,
+        lastModified: now,
+        data: opportunities,
+      };
+      
+      await downloadEncryptedFile(encryptedData, password);
+      toast({
+        title: "Backup Exported",
+        description: "File downloaded successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Export Error",
+        description: error.message || "Failed to export backup",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Auto-save effect
+  useEffect(() => {
+    if (opportunities.length > 0 && isLoggedIn && currentFileName) {
+      const timer = setTimeout(() => {
+        saveData(opportunities, false);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [opportunities, isLoggedIn, currentFileName]);
 
   const filteredOpportunities = opportunities.filter((opp) => {
     const matchesSearch =
@@ -142,11 +226,23 @@ const Index = () => {
       <header className="border-b bg-card sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4 flex-wrap">
-            <h1 className="text-2xl font-bold">Secure CRM</h1>
+            <div>
+              <h1 className="text-2xl font-bold">Secure CRM</h1>
+              <p className="text-sm text-muted-foreground">{currentFileName}</p>
+            </div>
             <div className="flex items-center gap-2">
-              <Button onClick={handleManualSave} variant="outline" size="sm">
+              {isAutoSaving && (
+                <span className="text-xs text-muted-foreground">Saving...</span>
+              )}
+              {!supportsFileSystem && (
+                <Button onClick={handleExportBackup} variant="outline" size="sm">
+                  <Download className="w-4 h-4 mr-2" />
+                  Export Backup
+                </Button>
+              )}
+              <Button onClick={handleManualSave} variant="outline" size="sm" disabled={isAutoSaving}>
                 <Save className="w-4 h-4 mr-2" />
-                {supportsFileSystem ? "Save" : "Download"}
+                Save Now
               </Button>
               <Button onClick={handleLogout} variant="outline" size="sm">
                 <LogOut className="w-4 h-4 mr-2" />

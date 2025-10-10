@@ -1,8 +1,11 @@
 import { encryptData, decryptData } from "./encryption";
 import type { EncryptedData } from "@/types/opportunity";
+import {
+  saveToIndexedDB as saveToIDB,
+  loadFromIndexedDB as loadFromIDB,
+} from "./indexedDB";
 
 const FILE_EXTENSION = ".enc";
-const DEFAULT_FILENAME = "crm-data.enc";
 
 // Check if File System Access API is supported
 export const isFileSystemSupported = () => {
@@ -29,8 +32,12 @@ export async function saveToFileSystem(
   let handle = fileHandle;
 
   if (!handle) {
+    const suggestedName = data.fileName.endsWith(FILE_EXTENSION)
+      ? data.fileName
+      : `${data.fileName}${FILE_EXTENSION}`;
+    
     handle = await (window as any).showSaveFilePicker({
-      suggestedName: DEFAULT_FILENAME,
+      suggestedName,
       types: [
         {
           description: "Encrypted CRM Data",
@@ -75,16 +82,43 @@ export async function loadFromFileSystem(
   return { data, handle };
 }
 
-// Download encrypted file (Mobile/Fallback)
+// Save to IndexedDB (Mobile/Fallback)
+export async function saveToIndexedDB(
+  data: EncryptedData,
+  password: string
+): Promise<void> {
+  const jsonString = JSON.stringify(data);
+  const encrypted = await encryptData(jsonString, password);
+  await saveToIDB(data.fileName, encrypted);
+}
+
+// Load from IndexedDB (Mobile/Fallback)
+export async function loadFromIndexedDB(
+  fileName: string,
+  password: string
+): Promise<EncryptedData> {
+  const encrypted = await loadFromIDB(fileName);
+  if (!encrypted) {
+    throw new Error("File not found in local storage");
+  }
+  const decrypted = await decryptData(encrypted, password);
+  return JSON.parse(decrypted);
+}
+
+// Download encrypted file (Export/Backup)
 export async function downloadEncryptedFile(data: EncryptedData, password: string) {
   const jsonString = JSON.stringify(data);
   const encrypted = await encryptData(jsonString, password);
+
+  const fileName = data.fileName.endsWith(FILE_EXTENSION)
+    ? data.fileName
+    : `${data.fileName}${FILE_EXTENSION}`;
 
   const blob = new Blob([encrypted], { type: "application/octet-stream" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = DEFAULT_FILENAME;
+  a.download = fileName;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
