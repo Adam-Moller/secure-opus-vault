@@ -28,7 +28,10 @@ export const OpportunityCard = ({ opportunity, onEdit, onDelete, onAddInteractio
 
   return (
     <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
+      <CardHeader 
+        className="pb-3 cursor-pointer hover:bg-accent/50 transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 space-y-2">
             <div className="flex items-center gap-3 flex-wrap">
@@ -65,24 +68,13 @@ export const OpportunityCard = ({ opportunity, onEdit, onDelete, onAddInteractio
               </TableBody>
             </Table>
           </div>
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="shrink-0"
-          >
+          <div className="shrink-0 flex items-center justify-center w-8 h-8">
             {isExpanded ? (
-              <>
-                <ChevronUp className="w-6 h-6 md:w-5 md:h-5" />
-                <span className="hidden md:inline ml-2 text-sm">Ocultar</span>
-              </>
+              <ChevronUp className="w-6 h-6 text-muted-foreground" />
             ) : (
-              <>
-                <ChevronDown className="w-6 h-6 md:w-5 md:h-5" />
-                <span className="hidden md:inline ml-2 text-sm">Ver detalhes</span>
-              </>
+              <ChevronDown className="w-6 h-6 text-muted-foreground" />
             )}
-          </Button>
+          </div>
         </div>
       </CardHeader>
 
@@ -146,7 +138,7 @@ export const OpportunityCard = ({ opportunity, onEdit, onDelete, onAddInteractio
             </div>
           )}
 
-          <div className="flex gap-2 pt-2">
+          <div className="flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
             <Button variant="outline" size="sm" onClick={() => onEdit(opportunity)}>
               <Edit className="w-4 h-4 mr-2" />
               Editar
