@@ -67,19 +67,19 @@ export const OpportunityCard = ({ opportunity, onEdit, onDelete, onAddInteractio
           </div>
           <Button
             variant="outline"
-            size="default"
+            size="lg"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="gap-2 min-w-[140px]"
+            className="shrink-0"
           >
             {isExpanded ? (
               <>
-                <ChevronUp className="w-5 h-5" />
-                <span className="text-sm">Ocultar</span>
+                <ChevronUp className="w-6 h-6 md:w-5 md:h-5" />
+                <span className="hidden md:inline ml-2 text-sm">Ocultar</span>
               </>
             ) : (
               <>
-                <ChevronDown className="w-5 h-5" />
-                <span className="text-sm">Ver detalhes</span>
+                <ChevronDown className="w-6 h-6 md:w-5 md:h-5" />
+                <span className="hidden md:inline ml-2 text-sm">Ver detalhes</span>
               </>
             )}
           </Button>

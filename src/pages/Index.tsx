@@ -244,31 +244,34 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-card sticky top-0 z-10 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <h1 className="text-2xl font-bold">CRM Seguro</h1>
-              <p className="text-sm text-muted-foreground">{currentFileName}</p>
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <h1 className="text-xl md:text-2xl font-bold">CRM Seguro</h1>
+              <p className="text-xs md:text-sm text-muted-foreground">{currentFileName}</p>
             </div>
-            <div className="flex items-center gap-2">
-              {isAutoSaving && (
-                <span className="text-xs text-muted-foreground">Salvando...</span>
-              )}
-              {!supportsFileSystem && (
-                <Button onClick={handleExportBackup} variant="outline" size="sm">
-                  <Download className="w-4 h-4 mr-2" />
-                  Exportar Backup
-                </Button>
-              )}
-              <Button onClick={handleManualSave} variant="outline" size="sm" disabled={isAutoSaving}>
-                <Save className="w-4 h-4 mr-2" />
-                Salvar Agora
+            <Button onClick={handleLogout} variant="outline" size="sm" className="shrink-0">
+              <LogOut className="w-4 h-4" />
+              <span className="hidden md:inline ml-2">Sair</span>
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
+            {isAutoSaving && (
+              <span className="text-xs text-muted-foreground">Salvando...</span>
+            )}
+            {!supportsFileSystem && (
+              <Button onClick={handleExportBackup} variant="outline" size="sm">
+                <Download className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Exportar Backup</span>
+                <span className="sm:hidden">Exportar</span>
               </Button>
-              <Button onClick={handleLogout} variant="outline" size="sm">
-                <LogOut className="w-4 h-4 mr-2" />
-                Sair
-              </Button>
-            </div>
+            )}
+            <Button onClick={handleManualSave} variant="outline" size="sm" disabled={isAutoSaving}>
+              <Save className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Salvar Agora</span>
+              <span className="sm:hidden">Salvar</span>
+            </Button>
           </div>
 
           <div className="flex items-center gap-4 mt-4 flex-wrap">
