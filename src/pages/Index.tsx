@@ -48,8 +48,8 @@ const Index = () => {
     });
     
     toast({
-      title: "Login Successful",
-      description: `Loaded ${data.data.length} opportunities from ${data.fileName}`,
+      title: "Login Bem-Sucedido",
+      description: `Carregadas ${data.data.length} oportunidades de ${data.fileName}`,
     });
   };
 
@@ -81,13 +81,13 @@ const Index = () => {
       await saveToIndexedDB(encryptedData, newPassword);
       
       toast({
-        title: "New CRM Created",
-        description: `${fileName} is ready to use`,
+        title: "Novo CRM Criado",
+        description: `${fileName} está pronto para uso`,
       });
     } catch (error: any) {
       toast({
-        title: "Creation Error",
-        description: error.message || "Failed to create file",
+        title: "Erro de Criação",
+        description: error.message || "Falha ao criar arquivo",
         variant: "destructive",
       });
     }
@@ -124,14 +124,14 @@ const Index = () => {
 
       if (showToast) {
         toast({
-          title: "Data Saved",
-          description: supportsFileSystem ? "File updated successfully" : "Saved to local storage",
+          title: "Dados Salvos",
+          description: supportsFileSystem ? "Arquivo atualizado com sucesso" : "Salvo no armazenamento local",
         });
       }
     } catch (error: any) {
       toast({
-        title: "Save Error",
-        description: error.message || "Failed to save data",
+        title: "Erro ao Salvar",
+        description: error.message || "Falha ao salvar dados",
         variant: "destructive",
       });
     } finally {
@@ -203,13 +203,13 @@ const Index = () => {
       
       await downloadEncryptedFile(encryptedData, password);
       toast({
-        title: "Backup Exported",
-        description: "File downloaded successfully",
+        title: "Backup Exportado",
+        description: "Arquivo baixado com sucesso",
       });
     } catch (error: any) {
       toast({
-        title: "Export Error",
-        description: error.message || "Failed to export backup",
+        title: "Erro ao Exportar",
+        description: error.message || "Falha ao exportar backup",
         variant: "destructive",
       });
     }
@@ -247,26 +247,26 @@ const Index = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
-              <h1 className="text-2xl font-bold">Secure CRM</h1>
+              <h1 className="text-2xl font-bold">CRM Seguro</h1>
               <p className="text-sm text-muted-foreground">{currentFileName}</p>
             </div>
             <div className="flex items-center gap-2">
               {isAutoSaving && (
-                <span className="text-xs text-muted-foreground">Saving...</span>
+                <span className="text-xs text-muted-foreground">Salvando...</span>
               )}
               {!supportsFileSystem && (
                 <Button onClick={handleExportBackup} variant="outline" size="sm">
                   <Download className="w-4 h-4 mr-2" />
-                  Export Backup
+                  Exportar Backup
                 </Button>
               )}
               <Button onClick={handleManualSave} variant="outline" size="sm" disabled={isAutoSaving}>
                 <Save className="w-4 h-4 mr-2" />
-                Save Now
+                Salvar Agora
               </Button>
               <Button onClick={handleLogout} variant="outline" size="sm">
                 <LogOut className="w-4 h-4 mr-2" />
-                Logout
+                Sair
               </Button>
             </div>
           </div>

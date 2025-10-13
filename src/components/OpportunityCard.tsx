@@ -66,11 +66,22 @@ export const OpportunityCard = ({ opportunity, onEdit, onDelete, onAddInteractio
             </Table>
           </div>
           <Button
-            variant="ghost"
-            size="sm"
+            variant="outline"
+            size="default"
             onClick={() => setIsExpanded(!isExpanded)}
+            className="gap-2 min-w-[140px]"
           >
-            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            {isExpanded ? (
+              <>
+                <ChevronUp className="w-5 h-5" />
+                <span className="text-sm">Ocultar</span>
+              </>
+            ) : (
+              <>
+                <ChevronDown className="w-5 h-5" />
+                <span className="text-sm">Ver detalhes</span>
+              </>
+            )}
           </Button>
         </div>
       </CardHeader>

@@ -46,8 +46,8 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
   const handlePasswordSubmit = async () => {
     if (!password.trim()) {
       toast({
-        title: "Password Required",
-        description: "Please enter your password",
+        title: "Senha Necessária",
+        description: "Por favor, insira sua senha",
         variant: "destructive",
       });
       return;
@@ -59,8 +59,8 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
       onLogin(data, password);
     } catch (error: any) {
       toast({
-        title: "Error Opening File",
-        description: error.message || "Failed to decrypt file. Check your password.",
+        title: "Erro ao Abrir Arquivo",
+        description: error.message || "Falha ao descriptografar arquivo. Verifique sua senha.",
         variant: "destructive",
       });
     } finally {
@@ -73,8 +73,8 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
   const handleLoadFromFileSystem = async () => {
     if (!password.trim()) {
       toast({
-        title: "Password Required",
-        description: "Please enter your master password",
+        title: "Senha Necessária",
+        description: "Por favor, insira sua senha mestra",
         variant: "destructive",
       });
       return;
@@ -91,8 +91,8 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
       }
     } catch (error: any) {
       toast({
-        title: "Error Loading File",
-        description: error.message || "Failed to load and decrypt file",
+        title: "Erro ao Carregar Arquivo",
+        description: error.message || "Falha ao carregar e descriptografar arquivo",
         variant: "destructive",
       });
     } finally {
@@ -107,8 +107,8 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
   const handleCreateSubmit = () => {
     if (!newFileName.trim()) {
       toast({
-        title: "File Name Required",
-        description: "Please enter a name for your CRM file",
+        title: "Nome do Arquivo Necessário",
+        description: "Por favor, insira um nome para seu arquivo CRM",
         variant: "destructive",
       });
       return;
@@ -116,8 +116,8 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
 
     if (!newPassword.trim()) {
       toast({
-        title: "Password Required",
-        description: "Please create a master password",
+        title: "Senha Necessária",
+        description: "Por favor, crie uma senha mestra",
         variant: "destructive",
       });
       return;
@@ -125,8 +125,8 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
 
     if (newPassword.length < 8) {
       toast({
-        title: "Password Too Short",
-        description: "Password must be at least 8 characters",
+        title: "Senha Muito Curta",
+        description: "A senha deve ter pelo menos 8 caracteres",
         variant: "destructive",
       });
       return;
@@ -140,7 +140,7 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
   };
 
   const handleDeleteFile = async (fileName: string) => {
-    if (!confirm(`Delete "${fileName}" from your file list? This will remove it from local storage.`)) {
+    if (!confirm(`Excluir "${fileName}" da sua lista de arquivos? Isso removerá do armazenamento local.`)) {
       return;
     }
 
@@ -149,13 +149,13 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
       removeFileFromRegistry(fileName);
       setFileRegistry(getFileRegistry());
       toast({
-        title: "File Removed",
-        description: "File has been deleted from local storage",
+        title: "Arquivo Removido",
+        description: "Arquivo foi excluído do armazenamento local",
       });
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete file",
+        title: "Erro",
+        description: error.message || "Falha ao excluir arquivo",
         variant: "destructive",
       });
     }
@@ -171,15 +171,15 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
                 <FileKey className="w-12 h-12 text-primary" />
               </div>
             </div>
-            <CardTitle className="text-2xl">Secure CRM</CardTitle>
+            <CardTitle className="text-2xl">CRM Seguro</CardTitle>
             <CardDescription>
-              Your offline, encrypted opportunity manager
+              Seu gerenciador de oportunidades offline e criptografado
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {fileRegistry.length > 0 && (
               <div className="space-y-3">
-                <h3 className="font-semibold text-sm text-muted-foreground">Your CRM Files</h3>
+                <h3 className="font-semibold text-sm text-muted-foreground">Seus Arquivos CRM</h3>
                 <div className="space-y-2 max-h-[300px] overflow-y-auto">
                   {fileRegistry.map((file) => (
                     <FileListItem
@@ -199,7 +199,7 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
                   <span className="w-full border-t" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">Or</span>
+                  <span className="bg-card px-2 text-muted-foreground">Ou</span>
                 </div>
               </div>
             )}
@@ -211,7 +211,7 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
                 variant="default"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Create New CRM File
+                Criar Novo Arquivo CRM
               </Button>
 
               <Button
@@ -220,14 +220,14 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
                 variant="outline"
               >
                 <FolderOpen className="w-4 h-4 mr-2" />
-                {supportsFileSystem ? "Open from File System" : "Upload from Device"}
+                {supportsFileSystem ? "Abrir do Sistema de Arquivos" : "Carregar do Dispositivo"}
               </Button>
             </div>
 
             <div className="text-xs text-center text-muted-foreground space-y-1">
-              <p>✓ 100% Offline - No cloud, no tracking</p>
-              <p>✓ Military-grade encryption (AES-256)</p>
-              <p>✓ Your data stays on your device</p>
+              <p>✓ 100% Offline - Sem nuvem, sem rastreamento</p>
+              <p>✓ Criptografia de nível militar (AES-256)</p>
+              <p>✓ Seus dados permanecem no seu dispositivo</p>
             </div>
           </CardContent>
         </Card>
@@ -237,35 +237,40 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
       <Dialog open={showPasswordDialog && !selectedFileName} onOpenChange={setShowPasswordDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Open File from {supportsFileSystem ? "File System" : "Device"}</DialogTitle>
+            <DialogTitle>Abrir Arquivo do {supportsFileSystem ? "Sistema de Arquivos" : "Dispositivo"}</DialogTitle>
             <DialogDescription>
-              Enter your master password to decrypt the file
+              Insira sua senha mestra para descriptografar o arquivo
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="fs-password" className="flex items-center gap-2">
                 <Lock className="w-4 h-4" />
-                Password
+                Senha
               </Label>
               <Input
                 id="fs-password"
                 type="password"
-                placeholder="Enter password"
+                placeholder="Insira a senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleLoadFromFileSystem()}
+                onFocus={(e) => {
+                  setTimeout(() => {
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 300);
+                }}
                 disabled={isLoading}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
-              Cancel
+              Cancelar
             </Button>
             <Button onClick={handleLoadFromFileSystem} disabled={isLoading}>
               <Upload className="w-4 h-4 mr-2" />
-              Open File
+              Abrir Arquivo
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -275,24 +280,29 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
       <Dialog open={showPasswordDialog && !!selectedFileName} onOpenChange={setShowPasswordDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Open {selectedFileName}</DialogTitle>
+            <DialogTitle>Abrir {selectedFileName}</DialogTitle>
             <DialogDescription>
-              Enter your password to decrypt this file
+              Insira sua senha para descriptografar este arquivo
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="quick-password" className="flex items-center gap-2">
                 <Lock className="w-4 h-4" />
-                Password
+                Senha
               </Label>
               <Input
                 id="quick-password"
                 type="password"
-                placeholder="Enter password"
+                placeholder="Insira a senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handlePasswordSubmit()}
+                onFocus={(e) => {
+                  setTimeout(() => {
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 300);
+                }}
                 disabled={isLoading}
                 autoFocus
               />
@@ -304,10 +314,10 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
               setSelectedFileName("");
               setPassword("");
             }}>
-              Cancel
+              Cancelar
             </Button>
             <Button onClick={handlePasswordSubmit} disabled={isLoading}>
-              Open
+              Abrir
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -317,35 +327,35 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create New CRM File</DialogTitle>
+            <DialogTitle>Criar Novo Arquivo CRM</DialogTitle>
             <DialogDescription>
-              Choose a name for your CRM file and set a master password
+              Escolha um nome para seu arquivo CRM e defina uma senha mestra
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="new-filename">
-                File Name
+                Nome do Arquivo
               </Label>
               <Input
                 id="new-filename"
-                placeholder="e.g., Schools-CRM, Startups-CRM"
+                placeholder="ex: Escolas-CRM, Startups-CRM"
                 value={newFileName}
                 onChange={(e) => setNewFileName(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Letters, numbers, hyphens, and underscores only
+                Apenas letras, números, hífens e sublinhados
               </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="new-password" className="flex items-center gap-2">
                 <Lock className="w-4 h-4" />
-                Master Password
+                Senha Mestra
               </Label>
               <Input
                 id="new-password"
                 type="password"
-                placeholder="At least 8 characters"
+                placeholder="Pelo menos 8 caracteres"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
               />
@@ -357,10 +367,10 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
               setNewFileName("");
               setNewPassword("");
             }}>
-              Cancel
+              Cancelar
             </Button>
             <Button onClick={handleCreateSubmit}>
-              Create File
+              Criar Arquivo
             </Button>
           </DialogFooter>
         </DialogContent>

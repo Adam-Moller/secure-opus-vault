@@ -36,7 +36,7 @@ export const InteractionModal = ({ open, onClose, onSave }: InteractionModalProp
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
         <DialogHeader>
           <DialogTitle>Nova Interação</DialogTitle>
         </DialogHeader>
@@ -67,6 +67,11 @@ export const InteractionModal = ({ open, onClose, onSave }: InteractionModalProp
               value={resumo}
               onChange={(e) => setResumo(e.target.value)}
               placeholder="Descreva o que foi discutido..."
+              onFocus={(e) => {
+                setTimeout(() => {
+                  e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+              }}
             />
           </div>
 
@@ -77,6 +82,11 @@ export const InteractionModal = ({ open, onClose, onSave }: InteractionModalProp
               type="date"
               value={proximoContato}
               onChange={(e) => setProximoContato(e.target.value)}
+              onFocus={(e) => {
+                setTimeout(() => {
+                  e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+              }}
             />
           </div>
 

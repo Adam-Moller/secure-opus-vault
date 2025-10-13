@@ -66,7 +66,7 @@ export const OpportunityModal = ({ open, onClose, onSave, opportunity }: Opportu
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
         <DialogHeader>
           <DialogTitle>{opportunity ? "Editar Oportunidade" : "Nova Oportunidade"}</DialogTitle>
         </DialogHeader>
@@ -80,6 +80,11 @@ export const OpportunityModal = ({ open, onClose, onSave, opportunity }: Opportu
                 required
                 value={formData.nomeEmpresa}
                 onChange={(e) => setFormData({ ...formData, nomeEmpresa: e.target.value })}
+                onFocus={(e) => {
+                  setTimeout(() => {
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 300);
+                }}
               />
             </div>
 
@@ -112,6 +117,11 @@ export const OpportunityModal = ({ open, onClose, onSave, opportunity }: Opportu
                 required
                 value={formData.valorPotencial}
                 onChange={(e) => setFormData({ ...formData, valorPotencial: parseFloat(e.target.value) || 0 })}
+                onFocus={(e) => {
+                  setTimeout(() => {
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 300);
+                }}
               />
             </div>
 
@@ -220,6 +230,11 @@ export const OpportunityModal = ({ open, onClose, onSave, opportunity }: Opportu
               rows={4}
               value={formData.notasGerais}
               onChange={(e) => setFormData({ ...formData, notasGerais: e.target.value })}
+              onFocus={(e) => {
+                setTimeout(() => {
+                  e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+              }}
             />
           </div>
 
