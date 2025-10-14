@@ -29,5 +29,6 @@ export interface EncryptedData {
   fileName: string;
   createdDate: string;
   lastModified: string;
+  crmType?: "sales" | "workforce"; // Optional for backwards compatibility
   data: Opportunity[];
 }
