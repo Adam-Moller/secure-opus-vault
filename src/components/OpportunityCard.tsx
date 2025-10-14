@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ChevronDown, ChevronUp, Edit, Trash2, MessageSquarePlus, Mail, Phone, User } from "lucide-react";
 import type { Opportunity } from "@/types/opportunity";
 import { format } from "date-fns";
@@ -140,22 +141,38 @@ export const OpportunityCard = ({ opportunity, onEdit, onDelete, onAddInteractio
 
           <div className="flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
             <Button variant="outline" size="sm" onClick={() => onEdit(opportunity)}>
-              <Edit className="w-4 h-4 mr-2" />
-              Editar
+              <Edit className="w-4 h-4 md:mr-2" />
+              <span className="hidden md:inline">Editar</span>
             </Button>
             <Button variant="outline" size="sm" onClick={() => onAddInteraction(opportunity)}>
-              <MessageSquarePlus className="w-4 h-4 mr-2" />
-              Nova Interação
+              <MessageSquarePlus className="w-4 h-4 md:mr-2" />
+              <span className="hidden md:inline">Nova Interação</span>
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onDelete(opportunity.id)}
-              className="ml-auto text-destructive hover:text-destructive"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Excluir
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-auto text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir Oportunidade</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tem certeza que deseja excluir esta oportunidade? Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => onDelete(opportunity.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Excluir
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </CardContent>
       )}
