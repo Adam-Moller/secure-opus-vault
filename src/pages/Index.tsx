@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Download, LogOut, Save, Search } from "lucide-react";
 import type { Opportunity, EncryptedData, Interaction } from "@/types/opportunity";
+import type { CRMType } from "@/types/crmData";
 import {
   isFileSystemSupported,
   saveToFileSystem,
@@ -21,6 +22,7 @@ const Index = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [password, setPassword] = useState("");
   const [currentFileName, setCurrentFileName] = useState("");
+  const [currentCrmType, setCurrentCrmType] = useState<CRMType>("sales");
   const [fileHandle, setFileHandle] = useState<FileSystemFileHandle | undefined>();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -36,6 +38,7 @@ const Index = () => {
   const handleLogin = (data: EncryptedData, loginPassword: string, handle?: FileSystemFileHandle) => {
     setPassword(loginPassword);
     setCurrentFileName(data.fileName);
+    setCurrentCrmType(data.crmType || "sales"); // Default to sales for backwards compatibility
     setFileHandle(handle);
     setOpportunities(data.data);
     setIsLoggedIn(true);
@@ -53,9 +56,10 @@ const Index = () => {
     });
   };
 
-  const handleCreateNew = async (newPassword: string, fileName: string) => {
+  const handleCreateNew = async (newPassword: string, fileName: string, crmType: CRMType) => {
     setPassword(newPassword);
     setCurrentFileName(fileName);
+    setCurrentCrmType(crmType);
     const emptyOpportunities: Opportunity[] = [];
     setOpportunities(emptyOpportunities);
     setIsLoggedIn(true);
@@ -75,14 +79,16 @@ const Index = () => {
         fileName,
         createdDate: now,
         lastModified: now,
+        crmType,
         data: emptyOpportunities,
       };
       
       await saveToIndexedDB(encryptedData, newPassword);
       
+      const crmTypeLabel = crmType === "sales" ? "CRM de Vendas" : "CRM de Gestão de Lojas";
       toast({
         title: "Novo CRM Criado",
-        description: `${fileName} está pronto para uso`,
+        description: `${fileName} (${crmTypeLabel}) está pronto para uso`,
       });
     } catch (error: any) {
       toast({
@@ -103,6 +109,7 @@ const Index = () => {
         fileName: currentFileName,
         createdDate: now,
         lastModified: now,
+        crmType: currentCrmType,
         data,
       };
       
@@ -198,6 +205,7 @@ const Index = () => {
         fileName: currentFileName,
         createdDate: now,
         lastModified: now,
+        crmType: currentCrmType,
         data: opportunities,
       };
       
