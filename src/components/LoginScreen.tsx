@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Lock, FileKey, Upload, FolderOpen, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -13,13 +14,14 @@ import {
   loadFromIndexedDB,
 } from "@/utils/fileStorage";
 import type { EncryptedData } from "@/types/opportunity";
+import type { CRMType } from "@/types/crmData";
 import { getFileRegistry, removeFileFromRegistry } from "@/utils/fileRegistry";
 import { FileListItem } from "@/components/FileListItem";
 import { deleteFromIndexedDB } from "@/utils/indexedDB";
 
 interface LoginScreenProps {
   onLogin: (data: EncryptedData, password: string, fileHandle?: FileSystemFileHandle) => void;
-  onCreateNew: (password: string, fileName: string) => void;
+  onCreateNew: (password: string, fileName: string, crmType: CRMType) => void;
 }
 
 export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
@@ -31,6 +33,7 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newFileName, setNewFileName] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [crmType, setCrmType] = useState<CRMType>("sales");
   const { toast } = useToast();
   const supportsFileSystem = isFileSystemSupported();
 
@@ -133,10 +136,11 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
     }
 
     const sanitizedFileName = newFileName.trim().replace(/[^a-zA-Z0-9-_\s]/g, "");
-    onCreateNew(newPassword, sanitizedFileName);
+    onCreateNew(newPassword, sanitizedFileName, crmType);
     setShowCreateDialog(false);
     setNewFileName("");
     setNewPassword("");
+    setCrmType("sales");
   };
 
   const handleDeleteFile = async (fileName: string) => {
@@ -329,10 +333,29 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
           <DialogHeader>
             <DialogTitle>Criar Novo Arquivo CRM</DialogTitle>
             <DialogDescription>
-              Escolha um nome para seu arquivo CRM e defina uma senha mestra
+              Escolha o tipo de CRM, um nome para seu arquivo e defina uma senha mestra
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div className="space-y-3">
+              <Label>Tipo de CRM</Label>
+              <RadioGroup value={crmType} onValueChange={(value) => setCrmType(value as CRMType)}>
+                <div className="flex items-center space-x-2 rounded-md border border-input p-3 hover:bg-accent cursor-pointer">
+                  <RadioGroupItem value="sales" id="sales" />
+                  <Label htmlFor="sales" className="flex-1 cursor-pointer font-normal">
+                    <div className="font-semibold">CRM de Vendas</div>
+                    <div className="text-xs text-muted-foreground">Gerenciar oportunidades e negociações</div>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 rounded-md border border-input p-3 hover:bg-accent cursor-pointer">
+                  <RadioGroupItem value="workforce" id="workforce" />
+                  <Label htmlFor="workforce" className="flex-1 cursor-pointer font-normal">
+                    <div className="font-semibold">Gestão de Lojas</div>
+                    <div className="text-xs text-muted-foreground">Gerenciar lojas, funcionários e visitas</div>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="new-filename">
                 Nome do Arquivo
@@ -366,6 +389,7 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
               setShowCreateDialog(false);
               setNewFileName("");
               setNewPassword("");
+              setCrmType("sales");
             }}>
               Cancelar
             </Button>
