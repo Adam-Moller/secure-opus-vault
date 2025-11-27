@@ -220,10 +220,6 @@ const Index = () => {
     });
   };
 
-  const handleAddVisit = (store: Store) => {
-    // TODO: Implement visit modal in future days
-    console.log("Add visit for store:", store);
-  };
 
   const handleLogout = () => {
     if (confirm("Tem certeza que deseja sair? Todas as alterações são salvas automaticamente.")) {
@@ -409,7 +405,6 @@ const Index = () => {
             stores={stores}
             onSaveStore={handleSaveStore}
             onDeleteStore={handleDeleteStore}
-            onAddVisit={handleAddVisit}
           />
         )}
       </main>

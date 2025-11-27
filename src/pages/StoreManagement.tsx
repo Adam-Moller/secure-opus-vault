@@ -1,33 +1,47 @@
 import { useState } from "react";
 import { StoreCard } from "@/components/StoreCard";
 import { StoreModal } from "@/components/StoreModal";
+import { VisitLogModal } from "@/components/VisitLogModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search } from "lucide-react";
-import type { Store } from "@/types/store";
+import type { Store, VisitLog } from "@/types/store";
 
 interface StoreManagementProps {
   stores: Store[];
   onSaveStore: (store: Store) => void;
   onDeleteStore: (id: string) => void;
-  onAddVisit: (store: Store) => void;
 }
 
 export const StoreManagement = ({ 
   stores, 
   onSaveStore, 
-  onDeleteStore,
-  onAddVisit 
+  onDeleteStore
 }: StoreManagementProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [regionFilter, setRegionFilter] = useState<string>("all");
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
+  const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<Store | undefined>();
+  const [selectedStoreForVisit, setSelectedStoreForVisit] = useState<Store | undefined>();
 
   // Get unique regions for filter
   const uniqueRegions = Array.from(new Set(stores.map(s => s.regiao))).sort();
+
+  const handleAddVisit = (visitLog: VisitLog) => {
+    if (!selectedStoreForVisit) return;
+
+    const updatedStore: Store = {
+      ...selectedStoreForVisit,
+      logsVisitas: [...selectedStoreForVisit.logsVisitas, visitLog],
+      ultimaVisitaData: visitLog.data,
+    };
+
+    onSaveStore(updatedStore);
+    setSelectedStoreForVisit(undefined);
+  };
 
   const filteredStores = stores.filter((store) => {
     const matchesSearch =
@@ -122,13 +136,16 @@ export const StoreManagement = ({
                 setIsStoreModalOpen(true);
               }}
               onDelete={onDeleteStore}
-              onAddVisit={onAddVisit}
+              onAddVisit={(s) => {
+                setSelectedStoreForVisit(s);
+                setIsVisitModalOpen(true);
+              }}
             />
           ))}
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modals */}
       <StoreModal
         open={isStoreModalOpen}
         onClose={() => {
@@ -137,6 +154,16 @@ export const StoreManagement = ({
         }}
         onSave={onSaveStore}
         store={editingStore}
+      />
+
+      <VisitLogModal
+        open={isVisitModalOpen}
+        onClose={() => {
+          setIsVisitModalOpen(false);
+          setSelectedStoreForVisit(undefined);
+        }}
+        onSave={handleAddVisit}
+        storeName={selectedStoreForVisit?.nome || ""}
       />
     </>
   );
