@@ -3,12 +3,14 @@ import { LoginScreen } from "@/components/LoginScreen";
 import { OpportunityCard } from "@/components/OpportunityCard";
 import { OpportunityModal } from "@/components/OpportunityModal";
 import { InteractionModal } from "@/components/InteractionModal";
+import { StoreManagement } from "@/pages/StoreManagement";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Download, LogOut, Save, Search } from "lucide-react";
 import type { Opportunity, EncryptedData, Interaction } from "@/types/opportunity";
+import type { Store } from "@/types/store";
 import type { CRMType } from "@/types/crmData";
 import {
   isFileSystemSupported,
@@ -25,6 +27,7 @@ const Index = () => {
   const [currentCrmType, setCurrentCrmType] = useState<CRMType>("sales");
   const [fileHandle, setFileHandle] = useState<FileSystemFileHandle | undefined>();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isOpportunityModalOpen, setIsOpportunityModalOpen] = useState(false);
@@ -38,9 +41,15 @@ const Index = () => {
   const handleLogin = (data: EncryptedData, loginPassword: string, handle?: FileSystemFileHandle) => {
     setPassword(loginPassword);
     setCurrentFileName(data.fileName);
-    setCurrentCrmType(data.crmType || "sales"); // Default to sales for backwards compatibility
+    const crmType = data.crmType || "sales";
+    setCurrentCrmType(crmType);
     setFileHandle(handle);
-    setOpportunities(data.data);
+    
+    if (crmType === "sales") {
+      setOpportunities(data.data as Opportunity[]);
+    } else {
+      setStores(data.data as Store[]);
+    }
     setIsLoggedIn(true);
     
     // Update registry
@@ -50,9 +59,10 @@ const Index = () => {
       lastModified: data.lastModified,
     });
     
+    const itemLabel = crmType === "sales" ? "oportunidades" : "lojas";
     toast({
       title: "Login Bem-Sucedido",
-      description: `Carregadas ${data.data.length} oportunidades de ${data.fileName}`,
+      description: `Carregadas ${data.data.length} ${itemLabel} de ${data.fileName}`,
     });
   };
 
@@ -60,8 +70,14 @@ const Index = () => {
     setPassword(newPassword);
     setCurrentFileName(fileName);
     setCurrentCrmType(crmType);
-    const emptyOpportunities: Opportunity[] = [];
-    setOpportunities(emptyOpportunities);
+    
+    if (crmType === "sales") {
+      const emptyOpportunities: Opportunity[] = [];
+      setOpportunities(emptyOpportunities);
+    } else {
+      const emptyStores: Store[] = [];
+      setStores(emptyStores);
+    }
     setIsLoggedIn(true);
     
     // Add to registry
@@ -80,7 +96,7 @@ const Index = () => {
         createdDate: now,
         lastModified: now,
         crmType,
-        data: emptyOpportunities,
+        data: crmType === "sales" ? [] : [],
       };
       
       await saveToIndexedDB(encryptedData, newPassword);
@@ -99,7 +115,7 @@ const Index = () => {
     }
   };
 
-  const saveData = async (data: Opportunity[], showToast = true) => {
+  const saveData = async (data: Opportunity[] | Store[], showToast = true) => {
     if (!currentFileName) return;
     
     setIsAutoSaving(true);
@@ -182,18 +198,47 @@ const Index = () => {
     setSelectedOpportunity(undefined);
   };
 
+  // Store handlers
+  const handleSaveStore = (store: Store) => {
+    const newStores = stores.some((s) => s.id === store.id)
+      ? stores.map((s) => (s.id === store.id ? store : s))
+      : [...stores, store];
+
+    setStores(newStores);
+    saveData(newStores);
+  };
+
+  const handleDeleteStore = (id: string) => {
+    if (!confirm("Tem certeza que deseja excluir esta loja?")) return;
+
+    const newStores = stores.filter((s) => s.id !== id);
+    setStores(newStores);
+    saveData(newStores);
+    toast({
+      title: "Loja Excluída",
+      description: "A loja foi removida",
+    });
+  };
+
+  const handleAddVisit = (store: Store) => {
+    // TODO: Implement visit modal in future days
+    console.log("Add visit for store:", store);
+  };
+
   const handleLogout = () => {
-    if (confirm("Are you sure you want to logout? All changes are auto-saved.")) {
+    if (confirm("Tem certeza que deseja sair? Todas as alterações são salvas automaticamente.")) {
       setIsLoggedIn(false);
       setPassword("");
       setCurrentFileName("");
       setFileHandle(undefined);
       setOpportunities([]);
+      setStores([]);
     }
   };
 
   const handleManualSave = () => {
-    saveData(opportunities, true);
+    const data = currentCrmType === "sales" ? opportunities : stores;
+    saveData(data, true);
   };
 
   const handleExportBackup = async () => {
@@ -201,12 +246,13 @@ const Index = () => {
     
     try {
       const now = new Date().toISOString();
+      const data = currentCrmType === "sales" ? opportunities : stores;
       const encryptedData: EncryptedData = {
         fileName: currentFileName,
         createdDate: now,
         lastModified: now,
         crmType: currentCrmType,
-        data: opportunities,
+        data,
       };
       
       await downloadEncryptedFile(encryptedData, password);
@@ -225,14 +271,17 @@ const Index = () => {
 
   // Auto-save effect
   useEffect(() => {
-    if (opportunities.length > 0 && isLoggedIn && currentFileName) {
-      const timer = setTimeout(() => {
-        saveData(opportunities, false);
-      }, 2000);
-      
-      return () => clearTimeout(timer);
+    if (isLoggedIn && currentFileName) {
+      const data = currentCrmType === "sales" ? opportunities : stores;
+      if (data.length > 0) {
+        const timer = setTimeout(() => {
+          saveData(data, false);
+        }, 2000);
+        
+        return () => clearTimeout(timer);
+      }
     }
-  }, [opportunities, isLoggedIn, currentFileName]);
+  }, [opportunities, stores, isLoggedIn, currentFileName, currentCrmType]);
 
   const filteredOpportunities = opportunities.filter((opp) => {
     const matchesSearch =
@@ -318,39 +367,50 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
-        {opportunities.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground mb-4">Nenhuma oportunidade ainda</p>
-            <Button onClick={() => setIsOpportunityModalOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Criar Primeira Oportunidade
-            </Button>
-          </div>
-        ) : filteredOpportunities.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Nenhuma oportunidade encontrada</p>
-          </div>
+        {currentCrmType === "sales" ? (
+          <>
+            {opportunities.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground mb-4">Nenhuma oportunidade ainda</p>
+                <Button onClick={() => setIsOpportunityModalOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Criar Primeira Oportunidade
+                </Button>
+              </div>
+            ) : filteredOpportunities.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">Nenhuma oportunidade encontrada</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Mostrando {filteredOpportunities.length} de {opportunities.length} oportunidades
+                </p>
+                {filteredOpportunities.map((opportunity) => (
+                  <OpportunityCard
+                    key={opportunity.id}
+                    opportunity={opportunity}
+                    onEdit={(opp) => {
+                      setEditingOpportunity(opp);
+                      setIsOpportunityModalOpen(true);
+                    }}
+                    onDelete={handleDeleteOpportunity}
+                    onAddInteraction={(opp) => {
+                      setSelectedOpportunity(opp);
+                      setIsInteractionModalOpen(true);
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         ) : (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Mostrando {filteredOpportunities.length} de {opportunities.length} oportunidades
-            </p>
-            {filteredOpportunities.map((opportunity) => (
-              <OpportunityCard
-                key={opportunity.id}
-                opportunity={opportunity}
-                onEdit={(opp) => {
-                  setEditingOpportunity(opp);
-                  setIsOpportunityModalOpen(true);
-                }}
-                onDelete={handleDeleteOpportunity}
-                onAddInteraction={(opp) => {
-                  setSelectedOpportunity(opp);
-                  setIsInteractionModalOpen(true);
-                }}
-              />
-            ))}
-          </div>
+          <StoreManagement
+            stores={stores}
+            onSaveStore={handleSaveStore}
+            onDeleteStore={handleDeleteStore}
+            onAddVisit={handleAddVisit}
+          />
         )}
       </main>
 

@@ -1,3 +1,5 @@
+import type { Store } from "./store";
+
 export interface Contact {
   nome: string;
   cargo: string;
@@ -30,5 +32,5 @@ export interface EncryptedData {
   createdDate: string;
   lastModified: string;
   crmType?: "sales" | "workforce"; // Optional for backwards compatibility
-  data: Opportunity[];
+  data: Opportunity[] | Store[];
 }
