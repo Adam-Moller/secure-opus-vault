@@ -2,6 +2,7 @@ import { useState } from "react";
 import { StoreCard } from "@/components/StoreCard";
 import { StoreModal } from "@/components/StoreModal";
 import { VisitLogModal } from "@/components/VisitLogModal";
+import { EmployeeManagementModal } from "@/components/EmployeeManagementModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -24,8 +25,10 @@ export const StoreManagement = ({
   const [regionFilter, setRegionFilter] = useState<string>("all");
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
   const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
+  const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<Store | undefined>();
   const [selectedStoreForVisit, setSelectedStoreForVisit] = useState<Store | undefined>();
+  const [selectedStoreForEmployees, setSelectedStoreForEmployees] = useState<Store | undefined>();
 
   // Get unique regions for filter
   const uniqueRegions = Array.from(new Set(stores.map(s => s.regiao))).sort();
@@ -140,6 +143,10 @@ export const StoreManagement = ({
                 setSelectedStoreForVisit(s);
                 setIsVisitModalOpen(true);
               }}
+              onManageEmployees={(s) => {
+                setSelectedStoreForEmployees(s);
+                setIsEmployeeModalOpen(true);
+              }}
             />
           ))}
         </div>
@@ -164,6 +171,16 @@ export const StoreManagement = ({
         }}
         onSave={handleAddVisit}
         storeName={selectedStoreForVisit?.nome || ""}
+      />
+
+      <EmployeeManagementModal
+        open={isEmployeeModalOpen}
+        onClose={() => {
+          setIsEmployeeModalOpen(false);
+          setSelectedStoreForEmployees(undefined);
+        }}
+        store={selectedStoreForEmployees}
+        onSaveStore={onSaveStore}
       />
     </>
   );
