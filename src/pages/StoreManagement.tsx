@@ -3,11 +3,12 @@ import { StoreCard } from "@/components/StoreCard";
 import { StoreModal } from "@/components/StoreModal";
 import { VisitLogModal } from "@/components/VisitLogModal";
 import { EmployeeManagementModal } from "@/components/EmployeeManagementModal";
+import { HRLogModal } from "@/components/HRLogModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search } from "lucide-react";
-import type { Store, VisitLog } from "@/types/store";
+import type { Store, VisitLog, HRLog } from "@/types/store";
 
 interface StoreManagementProps {
   stores: Store[];
@@ -26,9 +27,11 @@ export const StoreManagement = ({
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
   const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
   const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
+  const [isHRLogModalOpen, setIsHRLogModalOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<Store | undefined>();
   const [selectedStoreForVisit, setSelectedStoreForVisit] = useState<Store | undefined>();
   const [selectedStoreForEmployees, setSelectedStoreForEmployees] = useState<Store | undefined>();
+  const [selectedStoreForHRLog, setSelectedStoreForHRLog] = useState<Store | undefined>();
 
   // Get unique regions for filter
   const uniqueRegions = Array.from(new Set(stores.map(s => s.regiao))).sort();
@@ -44,6 +47,18 @@ export const StoreManagement = ({
 
     onSaveStore(updatedStore);
     setSelectedStoreForVisit(undefined);
+  };
+
+  const handleAddHRLog = (hrLog: HRLog) => {
+    if (!selectedStoreForHRLog) return;
+
+    const updatedStore: Store = {
+      ...selectedStoreForHRLog,
+      logsRH: [...selectedStoreForHRLog.logsRH, hrLog],
+    };
+
+    onSaveStore(updatedStore);
+    setSelectedStoreForHRLog(undefined);
   };
 
   const filteredStores = stores.filter((store) => {
@@ -147,6 +162,10 @@ export const StoreManagement = ({
                 setSelectedStoreForEmployees(s);
                 setIsEmployeeModalOpen(true);
               }}
+              onAddHRLog={(s) => {
+                setSelectedStoreForHRLog(s);
+                setIsHRLogModalOpen(true);
+              }}
             />
           ))}
         </div>
@@ -181,6 +200,17 @@ export const StoreManagement = ({
         }}
         store={selectedStoreForEmployees}
         onSaveStore={onSaveStore}
+      />
+
+      <HRLogModal
+        open={isHRLogModalOpen}
+        onClose={() => {
+          setIsHRLogModalOpen(false);
+          setSelectedStoreForHRLog(undefined);
+        }}
+        onSave={handleAddHRLog}
+        employees={selectedStoreForHRLog?.funcionarios || []}
+        storeName={selectedStoreForHRLog?.nome || ""}
       />
     </>
   );

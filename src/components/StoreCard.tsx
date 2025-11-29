@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ChevronDown, ChevronUp, Edit, Trash2, ClipboardList, Mail, Phone, User, MapPin, Users, TrendingUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Edit, Trash2, ClipboardList, Mail, Phone, User, MapPin, Users, TrendingUp, FileText } from "lucide-react";
 import type { Store } from "@/types/store";
 import { format } from "date-fns";
 
@@ -14,6 +14,7 @@ interface StoreCardProps {
   onDelete: (id: string) => void;
   onAddVisit: (store: Store) => void;
   onManageEmployees: (store: Store) => void;
+  onAddHRLog: (store: Store) => void;
 }
 
 const statusColors: Record<Store["status"], string> = {
@@ -23,7 +24,7 @@ const statusColors: Record<Store["status"], string> = {
   "Fechada Definitivamente": "bg-red-500",
 };
 
-export const StoreCard = ({ store, onEdit, onDelete, onAddVisit, onManageEmployees }: StoreCardProps) => {
+export const StoreCard = ({ store, onEdit, onDelete, onAddVisit, onManageEmployees, onAddHRLog }: StoreCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const salesProgress = store.metaVendasMensal > 0 
@@ -197,7 +198,7 @@ export const StoreCard = ({ store, onEdit, onDelete, onAddVisit, onManageEmploye
             </div>
           )}
 
-          <div className="flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
+          <div className="flex gap-2 pt-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
             <Button variant="outline" size="sm" onClick={() => onEdit(store)}>
               <Edit className="w-4 h-4 md:mr-2" />
               <span className="hidden md:inline">Editar</span>
@@ -205,6 +206,10 @@ export const StoreCard = ({ store, onEdit, onDelete, onAddVisit, onManageEmploye
             <Button variant="outline" size="sm" onClick={() => onAddVisit(store)}>
               <ClipboardList className="w-4 h-4 md:mr-2" />
               <span className="hidden md:inline">Nova Visita</span>
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => onAddHRLog(store)}>
+              <FileText className="w-4 h-4 md:mr-2" />
+              <span className="hidden md:inline">Evento RH</span>
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
