@@ -13,6 +13,7 @@ interface StoreCardProps {
   onEdit: (store: Store) => void;
   onDelete: (id: string) => void;
   onAddVisit: (store: Store) => void;
+  onManageEmployees: (store: Store) => void;
 }
 
 const statusColors: Record<Store["status"], string> = {
@@ -22,7 +23,7 @@ const statusColors: Record<Store["status"], string> = {
   "Fechada Definitivamente": "bg-red-500",
 };
 
-export const StoreCard = ({ store, onEdit, onDelete, onAddVisit }: StoreCardProps) => {
+export const StoreCard = ({ store, onEdit, onDelete, onAddVisit, onManageEmployees }: StoreCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const salesProgress = store.metaVendasMensal > 0 
@@ -139,7 +140,20 @@ export const StoreCard = ({ store, onEdit, onDelete, onAddVisit }: StoreCardProp
           </div>
 
           <div className="space-y-2">
-            <h4 className="text-sm font-semibold">Equipe</h4>
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold">Equipe</h4>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onManageEmployees(store);
+                }}
+              >
+                <Users className="w-4 h-4 mr-1" />
+                Gerenciar
+              </Button>
+            </div>
             <div className="text-sm space-y-1">
               <p className="text-muted-foreground">
                 Total de funcionários: {store.funcionarios.length}
