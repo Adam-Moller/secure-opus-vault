@@ -5,6 +5,7 @@ import { VisitLogModal } from "@/components/VisitLogModal";
 import { EmployeeManagementModal } from "@/components/EmployeeManagementModal";
 import { HRLogModal } from "@/components/HRLogModal";
 import { HRLogTimelineModal } from "@/components/HRLogTimelineModal";
+import { ManagementContactsModal } from "@/components/ManagementContactsModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -30,11 +31,13 @@ export const StoreManagement = ({
   const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
   const [isHRLogModalOpen, setIsHRLogModalOpen] = useState(false);
   const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
+  const [isContactsModalOpen, setIsContactsModalOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<Store | undefined>();
   const [selectedStoreForVisit, setSelectedStoreForVisit] = useState<Store | undefined>();
   const [selectedStoreForEmployees, setSelectedStoreForEmployees] = useState<Store | undefined>();
   const [selectedStoreForHRLog, setSelectedStoreForHRLog] = useState<Store | undefined>();
   const [selectedStoreForTimeline, setSelectedStoreForTimeline] = useState<Store | undefined>();
+  const [selectedStoreForContacts, setSelectedStoreForContacts] = useState<Store | undefined>();
   const [editingHRLog, setEditingHRLog] = useState<HRLog | undefined>();
 
   // Get unique regions for filter
@@ -82,6 +85,11 @@ export const StoreManagement = ({
     setEditingHRLog(log);
     setSelectedStoreForHRLog(selectedStoreForTimeline);
     setIsHRLogModalOpen(true);
+  };
+
+  const handleManageContacts = (store: Store) => {
+    setSelectedStoreForContacts(store);
+    setIsContactsModalOpen(true);
   };
 
   const filteredStores = stores.filter((store) => {
@@ -191,6 +199,7 @@ export const StoreManagement = ({
                 setIsHRLogModalOpen(true);
               }}
               onViewHRTimeline={handleViewHRTimeline}
+              onManageContacts={handleManageContacts}
             />
           ))}
         </div>
@@ -251,6 +260,16 @@ export const StoreManagement = ({
           onEditHRLog={handleEditHRLogFromTimeline}
         />
       )}
+
+      <ManagementContactsModal
+        open={isContactsModalOpen}
+        onClose={() => {
+          setIsContactsModalOpen(false);
+          setSelectedStoreForContacts(undefined);
+        }}
+        store={selectedStoreForContacts}
+        onSaveStore={onSaveStore}
+      />
     </>
   );
 };
