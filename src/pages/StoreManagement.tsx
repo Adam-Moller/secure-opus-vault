@@ -4,6 +4,7 @@ import { StoreModal } from "@/components/StoreModal";
 import { VisitLogModal } from "@/components/VisitLogModal";
 import { EmployeeManagementModal } from "@/components/EmployeeManagementModal";
 import { HRLogModal } from "@/components/HRLogModal";
+import { HRLogTimelineModal } from "@/components/HRLogTimelineModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,10 +29,13 @@ export const StoreManagement = ({
   const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
   const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
   const [isHRLogModalOpen, setIsHRLogModalOpen] = useState(false);
+  const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<Store | undefined>();
   const [selectedStoreForVisit, setSelectedStoreForVisit] = useState<Store | undefined>();
   const [selectedStoreForEmployees, setSelectedStoreForEmployees] = useState<Store | undefined>();
   const [selectedStoreForHRLog, setSelectedStoreForHRLog] = useState<Store | undefined>();
+  const [selectedStoreForTimeline, setSelectedStoreForTimeline] = useState<Store | undefined>();
+  const [editingHRLog, setEditingHRLog] = useState<HRLog | undefined>();
 
   // Get unique regions for filter
   const uniqueRegions = Array.from(new Set(stores.map(s => s.regiao))).sort();
@@ -49,16 +53,35 @@ export const StoreManagement = ({
     setSelectedStoreForVisit(undefined);
   };
 
-  const handleAddHRLog = (hrLog: HRLog) => {
+  const handleSaveHRLog = (hrLog: HRLog) => {
     if (!selectedStoreForHRLog) return;
 
     const updatedStore: Store = {
       ...selectedStoreForHRLog,
-      logsRH: [...selectedStoreForHRLog.logsRH, hrLog],
+      logsRH: editingHRLog
+        ? selectedStoreForHRLog.logsRH.map(log => log.id === hrLog.id ? hrLog : log)
+        : [...selectedStoreForHRLog.logsRH, hrLog],
     };
 
     onSaveStore(updatedStore);
     setSelectedStoreForHRLog(undefined);
+    setEditingHRLog(undefined);
+    
+    // If editing from timeline, update timeline store
+    if (selectedStoreForTimeline) {
+      setSelectedStoreForTimeline(updatedStore);
+    }
+  };
+
+  const handleViewHRTimeline = (store: Store) => {
+    setSelectedStoreForTimeline(store);
+    setIsTimelineModalOpen(true);
+  };
+
+  const handleEditHRLogFromTimeline = (log: HRLog) => {
+    setEditingHRLog(log);
+    setSelectedStoreForHRLog(selectedStoreForTimeline);
+    setIsHRLogModalOpen(true);
   };
 
   const filteredStores = stores.filter((store) => {
@@ -164,8 +187,10 @@ export const StoreManagement = ({
               }}
               onAddHRLog={(s) => {
                 setSelectedStoreForHRLog(s);
+                setEditingHRLog(undefined);
                 setIsHRLogModalOpen(true);
               }}
+              onViewHRTimeline={handleViewHRTimeline}
             />
           ))}
         </div>
@@ -207,11 +232,25 @@ export const StoreManagement = ({
         onClose={() => {
           setIsHRLogModalOpen(false);
           setSelectedStoreForHRLog(undefined);
+          setEditingHRLog(undefined);
         }}
-        onSave={handleAddHRLog}
+        onSave={handleSaveHRLog}
         employees={selectedStoreForHRLog?.funcionarios || []}
         storeName={selectedStoreForHRLog?.nome || ""}
+        hrLog={editingHRLog}
       />
+
+      {selectedStoreForTimeline && (
+        <HRLogTimelineModal
+          open={isTimelineModalOpen}
+          onClose={() => {
+            setIsTimelineModalOpen(false);
+            setSelectedStoreForTimeline(undefined);
+          }}
+          store={selectedStoreForTimeline}
+          onEditHRLog={handleEditHRLogFromTimeline}
+        />
+      )}
     </>
   );
 };
