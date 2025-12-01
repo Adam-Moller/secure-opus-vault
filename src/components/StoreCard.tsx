@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ChevronDown, ChevronUp, Edit, Trash2, ClipboardList, Mail, Phone, User, MapPin, Users, TrendingUp, FileText, History } from "lucide-react";
+import { ChevronDown, ChevronUp, Edit, Trash2, ClipboardList, Mail, Phone, User, MapPin, Users, TrendingUp, FileText, History, Building2 } from "lucide-react";
 import type { Store } from "@/types/store";
 import { format } from "date-fns";
 
@@ -16,6 +16,7 @@ interface StoreCardProps {
   onManageEmployees: (store: Store) => void;
   onAddHRLog: (store: Store) => void;
   onViewHRTimeline: (store: Store) => void;
+  onManageContacts: (store: Store) => void;
 }
 
 const statusColors: Record<Store["status"], string> = {
@@ -25,7 +26,7 @@ const statusColors: Record<Store["status"], string> = {
   "Fechada Definitivamente": "bg-red-500",
 };
 
-export const StoreCard = ({ store, onEdit, onDelete, onAddVisit, onManageEmployees, onAddHRLog, onViewHRTimeline }: StoreCardProps) => {
+export const StoreCard = ({ store, onEdit, onDelete, onAddVisit, onManageEmployees, onAddHRLog, onViewHRTimeline, onManageContacts }: StoreCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const salesProgress = store.metaVendasMensal > 0 
@@ -163,6 +164,33 @@ export const StoreCard = ({ store, onEdit, onDelete, onAddVisit, onManageEmploye
               <p className="text-muted-foreground">
                 Ativos: {store.funcionarios.filter(f => f.status === "Ativo").length}
               </p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold">Contatos da Gerência</h4>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onManageContacts(store);
+                }}
+              >
+                <Building2 className="w-4 h-4 mr-1" />
+                Gerenciar
+              </Button>
+            </div>
+            <div className="text-sm space-y-1">
+              <p className="text-muted-foreground">
+                Total de contatos: {store.contatosGerencia.length}
+              </p>
+              {store.contatosGerencia.length > 0 && (
+                <p className="text-muted-foreground">
+                  Níveis hierárquicos: {Math.max(...store.contatosGerencia.map(c => c.nivel))}
+                </p>
+              )}
             </div>
           </div>
 
