@@ -6,10 +6,11 @@ import { EmployeeManagementModal } from "@/components/EmployeeManagementModal";
 import { HRLogModal } from "@/components/HRLogModal";
 import { HRLogTimelineModal } from "@/components/HRLogTimelineModal";
 import { ManagementContactsModal } from "@/components/ManagementContactsModal";
+import { CalendarViewModal } from "@/components/CalendarViewModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Calendar } from "lucide-react";
 import type { Store, VisitLog, HRLog } from "@/types/store";
 
 interface StoreManagementProps {
@@ -32,6 +33,7 @@ export const StoreManagement = ({
   const [isHRLogModalOpen, setIsHRLogModalOpen] = useState(false);
   const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
   const [isContactsModalOpen, setIsContactsModalOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<Store | undefined>();
   const [selectedStoreForVisit, setSelectedStoreForVisit] = useState<Store | undefined>();
   const [selectedStoreForEmployees, setSelectedStoreForEmployees] = useState<Store | undefined>();
@@ -118,6 +120,15 @@ export const StoreManagement = ({
         >
           <Plus className="w-4 h-4 mr-2" />
           Nova Loja
+        </Button>
+
+        <Button 
+          variant="outline"
+          onClick={() => setIsCalendarOpen(true)}
+          className="shrink-0"
+        >
+          <Calendar className="w-4 h-4 mr-2" />
+          Calendário
         </Button>
 
         <div className="relative flex-1 min-w-[200px]">
@@ -269,6 +280,12 @@ export const StoreManagement = ({
         }}
         store={selectedStoreForContacts}
         onSaveStore={onSaveStore}
+      />
+
+      <CalendarViewModal
+        open={isCalendarOpen}
+        onClose={() => setIsCalendarOpen(false)}
+        stores={stores}
       />
     </>
   );
