@@ -7,10 +7,11 @@ import { HRLogModal } from "@/components/HRLogModal";
 import { HRLogTimelineModal } from "@/components/HRLogTimelineModal";
 import { ManagementContactsModal } from "@/components/ManagementContactsModal";
 import { CalendarViewModal } from "@/components/CalendarViewModal";
+import { ActionItemsTrackerModal } from "@/components/ActionItemsTrackerModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Calendar } from "lucide-react";
+import { Plus, Search, Calendar, ClipboardList } from "lucide-react";
 import type { Store, VisitLog, HRLog } from "@/types/store";
 
 interface StoreManagementProps {
@@ -34,6 +35,7 @@ export const StoreManagement = ({
   const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
   const [isContactsModalOpen, setIsContactsModalOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isActionsTrackerOpen, setIsActionsTrackerOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<Store | undefined>();
   const [selectedStoreForVisit, setSelectedStoreForVisit] = useState<Store | undefined>();
   const [selectedStoreForEmployees, setSelectedStoreForEmployees] = useState<Store | undefined>();
@@ -94,6 +96,51 @@ export const StoreManagement = ({
     setIsContactsModalOpen(true);
   };
 
+  const handleToggleAction = (
+    storeId: string, 
+    sourceType: "visit" | "hr", 
+    sourceId: string, 
+    actionId: string, 
+    completed: boolean
+  ) => {
+    const store = stores.find((s) => s.id === storeId);
+    if (!store) return;
+
+    let updatedStore: Store;
+
+    if (sourceType === "visit") {
+      updatedStore = {
+        ...store,
+        logsVisitas: store.logsVisitas.map((visit) =>
+          visit.id === sourceId
+            ? {
+                ...visit,
+                acoesPendentes: visit.acoesPendentes.map((action) =>
+                  action.id === actionId ? { ...action, concluida: completed } : action
+                ),
+              }
+            : visit
+        ),
+      };
+    } else {
+      updatedStore = {
+        ...store,
+        logsRH: store.logsRH.map((hrLog) =>
+          hrLog.id === sourceId
+            ? {
+                ...hrLog,
+                acoesPendentes: hrLog.acoesPendentes.map((action) =>
+                  action.id === actionId ? { ...action, concluida: completed } : action
+                ),
+              }
+            : hrLog
+        ),
+      };
+    }
+
+    onSaveStore(updatedStore);
+  };
+
   const filteredStores = stores.filter((store) => {
     const matchesSearch =
       store.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -129,6 +176,15 @@ export const StoreManagement = ({
         >
           <Calendar className="w-4 h-4 mr-2" />
           Calendário
+        </Button>
+
+        <Button 
+          variant="outline"
+          onClick={() => setIsActionsTrackerOpen(true)}
+          className="shrink-0"
+        >
+          <ClipboardList className="w-4 h-4 mr-2" />
+          Ações
         </Button>
 
         <div className="relative flex-1 min-w-[200px]">
@@ -286,6 +342,13 @@ export const StoreManagement = ({
         open={isCalendarOpen}
         onClose={() => setIsCalendarOpen(false)}
         stores={stores}
+      />
+
+      <ActionItemsTrackerModal
+        open={isActionsTrackerOpen}
+        onClose={() => setIsActionsTrackerOpen(false)}
+        stores={stores}
+        onToggleAction={handleToggleAction}
       />
     </>
   );
