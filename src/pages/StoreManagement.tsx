@@ -6,12 +6,13 @@ import { EmployeeManagementModal } from "@/components/EmployeeManagementModal";
 import { HRLogModal } from "@/components/HRLogModal";
 import { HRLogTimelineModal } from "@/components/HRLogTimelineModal";
 import { ManagementContactsModal } from "@/components/ManagementContactsModal";
+import { ManagementHubModal } from "@/components/ManagementHubModal";
 import { CalendarViewModal } from "@/components/CalendarViewModal";
 import { ActionItemsTrackerModal } from "@/components/ActionItemsTrackerModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Calendar, ClipboardList } from "lucide-react";
+import { Plus, Search, Calendar, ClipboardList, Users } from "lucide-react";
 import type { Store, VisitLog, HRLog } from "@/types/store";
 
 interface StoreManagementProps {
@@ -36,6 +37,7 @@ export const StoreManagement = ({
   const [isContactsModalOpen, setIsContactsModalOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isActionsTrackerOpen, setIsActionsTrackerOpen] = useState(false);
+  const [isManagementHubOpen, setIsManagementHubOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<Store | undefined>();
   const [selectedStoreForVisit, setSelectedStoreForVisit] = useState<Store | undefined>();
   const [selectedStoreForEmployees, setSelectedStoreForEmployees] = useState<Store | undefined>();
@@ -185,6 +187,15 @@ export const StoreManagement = ({
         >
           <ClipboardList className="w-4 h-4 mr-2" />
           Ações
+        </Button>
+
+        <Button 
+          variant="outline"
+          onClick={() => setIsManagementHubOpen(true)}
+          className="shrink-0"
+        >
+          <Users className="w-4 h-4 mr-2" />
+          Gerência
         </Button>
 
         <div className="relative flex-1 min-w-[200px]">
@@ -349,6 +360,13 @@ export const StoreManagement = ({
         onClose={() => setIsActionsTrackerOpen(false)}
         stores={stores}
         onToggleAction={handleToggleAction}
+      />
+
+      <ManagementHubModal
+        open={isManagementHubOpen}
+        onClose={() => setIsManagementHubOpen(false)}
+        stores={stores}
+        onSaveStore={onSaveStore}
       />
     </>
   );
