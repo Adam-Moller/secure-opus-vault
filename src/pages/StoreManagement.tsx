@@ -9,10 +9,11 @@ import { ManagementContactsModal } from "@/components/ManagementContactsModal";
 import { ManagementHubModal } from "@/components/ManagementHubModal";
 import { CalendarViewModal } from "@/components/CalendarViewModal";
 import { ActionItemsTrackerModal } from "@/components/ActionItemsTrackerModal";
+import { StoreDashboardModal } from "@/components/StoreDashboardModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Calendar, ClipboardList, Users } from "lucide-react";
+import { Plus, Search, Calendar, ClipboardList, Users, LayoutDashboard } from "lucide-react";
 import type { Store, VisitLog, HRLog } from "@/types/store";
 
 interface StoreManagementProps {
@@ -38,6 +39,7 @@ export const StoreManagement = ({
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isActionsTrackerOpen, setIsActionsTrackerOpen] = useState(false);
   const [isManagementHubOpen, setIsManagementHubOpen] = useState(false);
+  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<Store | undefined>();
   const [selectedStoreForVisit, setSelectedStoreForVisit] = useState<Store | undefined>();
   const [selectedStoreForEmployees, setSelectedStoreForEmployees] = useState<Store | undefined>();
@@ -169,6 +171,15 @@ export const StoreManagement = ({
         >
           <Plus className="w-4 h-4 mr-2" />
           Nova Loja
+        </Button>
+
+        <Button 
+          variant="outline"
+          onClick={() => setIsDashboardOpen(true)}
+          className="shrink-0"
+        >
+          <LayoutDashboard className="w-4 h-4 mr-2" />
+          Dashboard
         </Button>
 
         <Button 
@@ -367,6 +378,12 @@ export const StoreManagement = ({
         onClose={() => setIsManagementHubOpen(false)}
         stores={stores}
         onSaveStore={onSaveStore}
+      />
+
+      <StoreDashboardModal
+        open={isDashboardOpen}
+        onClose={() => setIsDashboardOpen(false)}
+        stores={stores}
       />
     </>
   );
