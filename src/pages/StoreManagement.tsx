@@ -161,90 +161,97 @@ export const StoreManagement = ({
   return (
     <>
       {/* Actions and Filters */}
-      <div className="flex items-center gap-4 mb-6 flex-wrap">
-        <Button 
-          onClick={() => {
-            setEditingStore(undefined);
-            setIsStoreModalOpen(true);
-          }} 
-          className="shrink-0"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Nova Loja
-        </Button>
+      <div className="flex flex-col gap-4 mb-6">
+        {/* Primary Actions - Mobile optimized grid */}
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
+          <Button 
+            onClick={() => {
+              setEditingStore(undefined);
+              setIsStoreModalOpen(true);
+            }} 
+            className="col-span-2 sm:col-span-1"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nova Loja
+          </Button>
 
-        <Button 
-          variant="outline"
-          onClick={() => setIsDashboardOpen(true)}
-          className="shrink-0"
-        >
-          <LayoutDashboard className="w-4 h-4 mr-2" />
-          Dashboard
-        </Button>
+          <Button 
+            variant="outline"
+            onClick={() => setIsDashboardOpen(true)}
+          >
+            <LayoutDashboard className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Dashboard</span>
+            <span className="sm:hidden">Dash</span>
+          </Button>
 
-        <Button 
-          variant="outline"
-          onClick={() => setIsCalendarOpen(true)}
-          className="shrink-0"
-        >
-          <Calendar className="w-4 h-4 mr-2" />
-          Calendário
-        </Button>
+          <Button 
+            variant="outline"
+            onClick={() => setIsCalendarOpen(true)}
+          >
+            <Calendar className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Calendário</span>
+            <span className="sm:hidden">Cal</span>
+          </Button>
 
-        <Button 
-          variant="outline"
-          onClick={() => setIsActionsTrackerOpen(true)}
-          className="shrink-0"
-        >
-          <ClipboardList className="w-4 h-4 mr-2" />
-          Ações
-        </Button>
+          <Button 
+            variant="outline"
+            onClick={() => setIsActionsTrackerOpen(true)}
+          >
+            <ClipboardList className="w-4 h-4 sm:mr-2" />
+            <span>Ações</span>
+          </Button>
 
-        <Button 
-          variant="outline"
-          onClick={() => setIsManagementHubOpen(true)}
-          className="shrink-0"
-        >
-          <Users className="w-4 h-4 mr-2" />
-          Gerência
-        </Button>
-
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por loja, gerente, região..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+          <Button 
+            variant="outline"
+            onClick={() => setIsManagementHubOpen(true)}
+          >
+            <Users className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Gerência</span>
+            <span className="sm:hidden">Ger</span>
+          </Button>
         </div>
 
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent className="bg-popover">
-            <SelectItem value="all">Todos os Status</SelectItem>
-            <SelectItem value="Operando">Operando</SelectItem>
-            <SelectItem value="Reforma">Reforma</SelectItem>
-            <SelectItem value="Fechada Temporariamente">Fechada Temporariamente</SelectItem>
-            <SelectItem value="Fechada Definitivamente">Fechada Definitivamente</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* Search and Filters - Stack on mobile */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por loja, gerente, região..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
 
-        <Select value={regionFilter} onValueChange={setRegionFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Região" />
-          </SelectTrigger>
-          <SelectContent className="bg-popover">
-            <SelectItem value="all">Todas as Regiões</SelectItem>
-            {uniqueRegions.map((region) => (
-              <SelectItem key={region} value={region}>
-                {region}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <div className="flex gap-2">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="flex-1 sm:w-[160px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover">
+                <SelectItem value="all">Todos Status</SelectItem>
+                <SelectItem value="Operando">Operando</SelectItem>
+                <SelectItem value="Reforma">Reforma</SelectItem>
+                <SelectItem value="Fechada Temporariamente">Fechada Temp.</SelectItem>
+                <SelectItem value="Fechada Definitivamente">Fechada Def.</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={regionFilter} onValueChange={setRegionFilter}>
+              <SelectTrigger className="flex-1 sm:w-[160px]">
+                <SelectValue placeholder="Região" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover">
+                <SelectItem value="all">Todas Regiões</SelectItem>
+                {uniqueRegions.map((region) => (
+                  <SelectItem key={region} value={region}>
+                    {region}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </div>
 
       {/* Content */}

@@ -40,9 +40,9 @@ export const StoreCard = ({ store, onEdit, onDelete, onAddVisit, onManageEmploye
     : "text-red-600";
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="hover:shadow-md transition-shadow touch-manipulation">
       <CardHeader 
-        className="pb-3 cursor-pointer hover:bg-accent/50 transition-colors"
+        className="pb-3 cursor-pointer hover:bg-accent/50 active:bg-accent/70 transition-colors min-h-[44px]"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-start justify-between gap-4">
