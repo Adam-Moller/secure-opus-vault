@@ -1,4 +1,5 @@
 import type { Store } from "./store";
+import type { CRMType } from "./crmData";
 
 export interface Contact {
   nome: string;
@@ -31,6 +32,27 @@ export interface EncryptedData {
   fileName: string;
   createdDate: string;
   lastModified: string;
-  crmType?: "sales" | "workforce"; // Optional for backwards compatibility
+  crmType: CRMType;
   data: Opportunity[] | Store[];
+}
+
+// Helper to get item count from encrypted data
+export function getEncryptedDataItemCount(data: EncryptedData): number {
+  return Array.isArray(data.data) ? data.data.length : 0;
+}
+
+// Helper to determine CRM type from data (for backwards compatibility)
+export function inferCRMType(data: EncryptedData): CRMType {
+  if (data.crmType) return data.crmType;
+  
+  // Try to infer from data structure
+  if (data.data && data.data.length > 0) {
+    const firstItem = data.data[0];
+    // Workforce stores have funcionarios array, opportunities have nomeEmpresa
+    if ('funcionarios' in firstItem) return "workforce";
+    if ('nomeEmpresa' in firstItem) return "sales";
+  }
+  
+  // Default to sales for backwards compatibility
+  return "sales";
 }

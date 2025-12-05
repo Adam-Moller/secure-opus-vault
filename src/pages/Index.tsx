@@ -55,7 +55,8 @@ const Index = () => {
     // Update registry
     updateFileInRegistry(data.fileName, {
       lastOpened: new Date().toISOString(),
-      opportunityCount: data.data.length,
+      crmType: crmType,
+      itemCount: data.data.length,
       lastModified: data.lastModified,
     });
     
@@ -85,7 +86,8 @@ const Index = () => {
       fileName,
       lastModified: new Date().toISOString(),
       lastOpened: new Date().toISOString(),
-      opportunityCount: 0,
+      crmType,
+      itemCount: 0,
     });
     
     // Save initial empty state to IndexedDB
@@ -142,7 +144,7 @@ const Index = () => {
       // Update registry
       updateFileInRegistry(currentFileName, {
         lastModified: now,
-        opportunityCount: data.length,
+        itemCount: data.length,
       });
 
       if (showToast) {
