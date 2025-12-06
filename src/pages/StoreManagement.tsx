@@ -11,10 +11,12 @@ import { CalendarViewModal } from "@/components/CalendarViewModal";
 import { ActionItemsTrackerModal } from "@/components/ActionItemsTrackerModal";
 import { StoreDashboardModal } from "@/components/StoreDashboardModal";
 import { EmployeeDirectoryModal } from "@/components/EmployeeDirectoryModal";
+import { ExportDataModal } from "@/components/ExportDataModal";
+import { PerformanceAnalyticsModal } from "@/components/PerformanceAnalyticsModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Calendar, ClipboardList, Users, LayoutDashboard, UserSearch } from "lucide-react";
+import { Plus, Search, Calendar, ClipboardList, Users, LayoutDashboard, UserSearch, Download, TrendingUp } from "lucide-react";
 import type { Store, VisitLog, HRLog } from "@/types/store";
 
 interface StoreManagementProps {
@@ -42,6 +44,8 @@ export const StoreManagement = ({
   const [isManagementHubOpen, setIsManagementHubOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isEmployeeDirectoryOpen, setIsEmployeeDirectoryOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<Store | undefined>();
   const [selectedStoreForVisit, setSelectedStoreForVisit] = useState<Store | undefined>();
   const [selectedStoreForEmployees, setSelectedStoreForEmployees] = useState<Store | undefined>();
@@ -219,6 +223,24 @@ export const StoreManagement = ({
             <UserSearch className="w-4 h-4 sm:mr-2" />
             <span className="hidden sm:inline">Funcionários</span>
             <span className="sm:hidden">Func</span>
+          </Button>
+
+          <Button 
+            variant="outline"
+            onClick={() => setIsAnalyticsModalOpen(true)}
+          >
+            <TrendingUp className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Análises</span>
+            <span className="sm:hidden">Anál</span>
+          </Button>
+
+          <Button 
+            variant="outline"
+            onClick={() => setIsExportModalOpen(true)}
+          >
+            <Download className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Exportar</span>
+            <span className="sm:hidden">Exp</span>
           </Button>
         </div>
 
@@ -407,6 +429,18 @@ export const StoreManagement = ({
       <EmployeeDirectoryModal
         open={isEmployeeDirectoryOpen}
         onClose={() => setIsEmployeeDirectoryOpen(false)}
+        stores={stores}
+      />
+
+      <ExportDataModal
+        open={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        stores={stores}
+      />
+
+      <PerformanceAnalyticsModal
+        open={isAnalyticsModalOpen}
+        onClose={() => setIsAnalyticsModalOpen(false)}
         stores={stores}
       />
     </>
