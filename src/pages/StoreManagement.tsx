@@ -10,10 +10,11 @@ import { ManagementHubModal } from "@/components/ManagementHubModal";
 import { CalendarViewModal } from "@/components/CalendarViewModal";
 import { ActionItemsTrackerModal } from "@/components/ActionItemsTrackerModal";
 import { StoreDashboardModal } from "@/components/StoreDashboardModal";
+import { EmployeeDirectoryModal } from "@/components/EmployeeDirectoryModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Calendar, ClipboardList, Users, LayoutDashboard } from "lucide-react";
+import { Plus, Search, Calendar, ClipboardList, Users, LayoutDashboard, UserSearch } from "lucide-react";
 import type { Store, VisitLog, HRLog } from "@/types/store";
 
 interface StoreManagementProps {
@@ -40,6 +41,7 @@ export const StoreManagement = ({
   const [isActionsTrackerOpen, setIsActionsTrackerOpen] = useState(false);
   const [isManagementHubOpen, setIsManagementHubOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+  const [isEmployeeDirectoryOpen, setIsEmployeeDirectoryOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<Store | undefined>();
   const [selectedStoreForVisit, setSelectedStoreForVisit] = useState<Store | undefined>();
   const [selectedStoreForEmployees, setSelectedStoreForEmployees] = useState<Store | undefined>();
@@ -208,6 +210,15 @@ export const StoreManagement = ({
             <Users className="w-4 h-4 sm:mr-2" />
             <span className="hidden sm:inline">Gerência</span>
             <span className="sm:hidden">Ger</span>
+          </Button>
+
+          <Button 
+            variant="outline"
+            onClick={() => setIsEmployeeDirectoryOpen(true)}
+          >
+            <UserSearch className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Funcionários</span>
+            <span className="sm:hidden">Func</span>
           </Button>
         </div>
 
@@ -390,6 +401,12 @@ export const StoreManagement = ({
       <StoreDashboardModal
         open={isDashboardOpen}
         onClose={() => setIsDashboardOpen(false)}
+        stores={stores}
+      />
+
+      <EmployeeDirectoryModal
+        open={isEmployeeDirectoryOpen}
+        onClose={() => setIsEmployeeDirectoryOpen(false)}
         stores={stores}
       />
     </>
