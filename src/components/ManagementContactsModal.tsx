@@ -27,6 +27,28 @@ export const ManagementContactsModal = ({
   const [editingContact, setEditingContact] = useState<ManagementContact | undefined>();
   const [hierarchyLevels, setHierarchyLevels] = useState(3);
 
+  const filteredContacts = useMemo(() => {
+    if (!store) return [];
+    return store.contatosGerencia
+      .filter(contact => 
+        contact.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        contact.cargo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        contact.email.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      .sort((a, b) => a.nivel - b.nivel);
+  }, [store?.contatosGerencia, searchTerm]);
+
+  const contactsByLevel = useMemo(() => {
+    const grouped: Record<number, ManagementContact[]> = {};
+    filteredContacts.forEach(contact => {
+      if (!grouped[contact.nivel]) {
+        grouped[contact.nivel] = [];
+      }
+      grouped[contact.nivel].push(contact);
+    });
+    return grouped;
+  }, [filteredContacts]);
+
   if (!store) return null;
 
   const handleSaveContact = (contact: ManagementContact) => {
@@ -52,28 +74,6 @@ export const ManagementContactsModal = ({
     };
     onSaveStore(updatedStore);
   };
-
-  const filteredContacts = useMemo(() => {
-    return store.contatosGerencia
-      .filter(contact => 
-        contact.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        contact.cargo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        contact.email.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-      .sort((a, b) => a.nivel - b.nivel);
-  }, [store.contatosGerencia, searchTerm]);
-
-  // Group contacts by level
-  const contactsByLevel = useMemo(() => {
-    const grouped: Record<number, ManagementContact[]> = {};
-    filteredContacts.forEach(contact => {
-      if (!grouped[contact.nivel]) {
-        grouped[contact.nivel] = [];
-      }
-      grouped[contact.nivel].push(contact);
-    });
-    return grouped;
-  }, [filteredContacts]);
 
   const getLevelLabel = (level: number) => {
     if (level === 1) return "Nível 1 - Chefe Direto";
