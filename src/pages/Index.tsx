@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Download, LogOut, Save, Search } from "lucide-react";
-import type { Opportunity, EncryptedData, Interaction } from "@/types/opportunity";
-import type { Store } from "@/types/store";
+import type { Opportunity, EncryptedData, Interaction, isWorkforceData } from "@/types/opportunity";
+import type { Store, WorkforceData } from "@/types/store";
 import type { CRMType } from "@/types/crmData";
+import { ensureWorkforceData, needsMigration } from "@/utils/dataMigration";
 import {
   isFileSystemSupported,
   saveToFileSystem,
@@ -45,10 +46,23 @@ const Index = () => {
     setCurrentCrmType(crmType);
     setFileHandle(handle);
     
+    let itemCount = 0;
     if (crmType === "sales") {
-      setOpportunities(data.data as Opportunity[]);
+      const opportunities = data.data as Opportunity[];
+      setOpportunities(opportunities);
+      itemCount = opportunities.length;
     } else {
-      setStores(data.data as Store[]);
+      // Handle both legacy Store[] and new WorkforceData format
+      if (Array.isArray(data.data)) {
+        // Legacy format - migrate (data.data is Store[])
+        setStores(data.data as unknown as Store[]);
+        itemCount = data.data.length;
+      } else {
+        // New WorkforceData format
+        const workforceData = data.data as WorkforceData;
+        setStores(workforceData.stores);
+        itemCount = workforceData.stores.length;
+      }
     }
     setIsLoggedIn(true);
     
@@ -56,14 +70,14 @@ const Index = () => {
     updateFileInRegistry(data.fileName, {
       lastOpened: new Date().toISOString(),
       crmType: crmType,
-      itemCount: data.data.length,
+      itemCount,
       lastModified: data.lastModified,
     });
     
     const itemLabel = crmType === "sales" ? "oportunidades" : "lojas";
     toast({
       title: "Login Bem-Sucedido",
-      description: `Carregadas ${data.data.length} ${itemLabel} de ${data.fileName}`,
+      description: `Carregadas ${itemCount} ${itemLabel} de ${data.fileName}`,
     });
   };
 
@@ -123,12 +137,18 @@ const Index = () => {
     setIsAutoSaving(true);
     try {
       const now = new Date().toISOString();
+      
+      // For workforce CRM, wrap stores in WorkforceData structure
+      const dataToSave: Opportunity[] | WorkforceData = currentCrmType === "sales" 
+        ? (data as Opportunity[])
+        : { stores: data as Store[], employees: [], badgeTemplates: [] };
+      
       const encryptedData: EncryptedData = {
         fileName: currentFileName,
         createdDate: now,
         lastModified: now,
         crmType: currentCrmType,
-        data,
+        data: dataToSave,
       };
       
       if (supportsFileSystem && fileHandle) {
@@ -245,12 +265,18 @@ const Index = () => {
     try {
       const now = new Date().toISOString();
       const data = currentCrmType === "sales" ? opportunities : stores;
+      
+      // For workforce CRM, wrap stores in WorkforceData structure
+      const dataToSave: Opportunity[] | WorkforceData = currentCrmType === "sales" 
+        ? (data as Opportunity[])
+        : { stores: data as Store[], employees: [], badgeTemplates: [] };
+      
       const encryptedData: EncryptedData = {
         fileName: currentFileName,
         createdDate: now,
         lastModified: now,
         crmType: currentCrmType,
-        data,
+        data: dataToSave,
       };
       
       await downloadEncryptedFile(encryptedData, password);

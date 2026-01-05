@@ -1,4 +1,4 @@
-import type { Store } from "./store";
+import type { Store, WorkforceData } from "./store";
 import type { CRMType } from "./crmData";
 
 export interface Contact {
@@ -33,11 +33,23 @@ export interface EncryptedData {
   createdDate: string;
   lastModified: string;
   crmType: CRMType;
-  data: Opportunity[] | Store[];
+  data: Opportunity[] | WorkforceData;
+}
+
+// Helper to check if data is WorkforceData
+export function isWorkforceData(data: Opportunity[] | WorkforceData): data is WorkforceData {
+  return data !== null && typeof data === 'object' && !Array.isArray(data) && 'stores' in data;
 }
 
 // Helper to get item count from encrypted data
 export function getEncryptedDataItemCount(data: EncryptedData): number {
+  if (data.crmType === 'workforce') {
+    if (isWorkforceData(data.data)) {
+      return data.data.stores.length;
+    }
+    // Legacy format - array of stores
+    return Array.isArray(data.data) ? data.data.length : 0;
+  }
   return Array.isArray(data.data) ? data.data.length : 0;
 }
 
@@ -46,7 +58,11 @@ export function inferCRMType(data: EncryptedData): CRMType {
   if (data.crmType) return data.crmType;
   
   // Try to infer from data structure
-  if (data.data && data.data.length > 0) {
+  if (isWorkforceData(data.data)) {
+    return "workforce";
+  }
+  
+  if (Array.isArray(data.data) && data.data.length > 0) {
     const firstItem = data.data[0];
     // Workforce stores have funcionarios array, opportunities have nomeEmpresa
     if ('funcionarios' in firstItem) return "workforce";
