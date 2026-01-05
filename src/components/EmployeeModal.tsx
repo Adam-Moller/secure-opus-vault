@@ -16,11 +16,19 @@ interface EmployeeModalProps {
 
 const emptyEmployee: Omit<Employee, "id"> = {
   nome: "",
+  tipo: "Consultor",
   cargo: "",
   dataAdmissao: new Date().toISOString().split("T")[0],
   status: "Ativo",
   telefone: "",
   email: "",
+  lojaAtualId: "",
+  historicoLojas: [],
+  feriasProgramadas: [],
+  logAfastamentos: [],
+  conquistas: [],
+  badges: [],
+  observacoes: [],
 };
 
 export const EmployeeModal = ({ open, onClose, onSave, employee, storeName }: EmployeeModalProps) => {

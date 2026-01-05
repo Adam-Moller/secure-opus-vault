@@ -13,12 +13,13 @@ import { StoreDashboardModal } from "@/components/StoreDashboardModal";
 import { EmployeeDirectoryModal } from "@/components/EmployeeDirectoryModal";
 import { ExportDataModal } from "@/components/ExportDataModal";
 import { PerformanceAnalyticsModal } from "@/components/PerformanceAnalyticsModal";
+import { BadgeTemplateModal } from "@/components/BadgeTemplateModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Calendar, ClipboardList, Users, LayoutDashboard, UserSearch, Download, TrendingUp, HelpCircle } from "lucide-react";
+import { Plus, Search, Calendar, ClipboardList, Users, LayoutDashboard, UserSearch, Download, TrendingUp, HelpCircle, Award } from "lucide-react";
 import HelpModal from "@/components/HelpModal";
-import type { Store, VisitLog, HRLog } from "@/types/store";
+import type { Store, VisitLog, HRLog, BadgeTemplate } from "@/types/store";
 
 interface StoreManagementProps {
   stores: Store[];
@@ -48,6 +49,8 @@ export const StoreManagement = ({
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const [isBadgeModalOpen, setIsBadgeModalOpen] = useState(false);
+  const [badgeTemplates, setBadgeTemplates] = useState<BadgeTemplate[]>([]);
   const [editingStore, setEditingStore] = useState<Store | undefined>();
   const [selectedStoreForVisit, setSelectedStoreForVisit] = useState<Store | undefined>();
   const [selectedStoreForEmployees, setSelectedStoreForEmployees] = useState<Store | undefined>();
@@ -243,6 +246,15 @@ export const StoreManagement = ({
             <Download className="w-4 h-4 sm:mr-2" />
             <span className="hidden sm:inline">Exportar</span>
             <span className="sm:hidden">Exp</span>
+          </Button>
+
+          <Button 
+            variant="outline"
+            onClick={() => setIsBadgeModalOpen(true)}
+          >
+            <Award className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Badges</span>
+            <span className="sm:hidden">Bdg</span>
           </Button>
 
           <Button 
@@ -458,6 +470,13 @@ export const StoreManagement = ({
       <HelpModal
         isOpen={isHelpModalOpen}
         onClose={() => setIsHelpModalOpen(false)}
+      />
+
+      <BadgeTemplateModal
+        open={isBadgeModalOpen}
+        onClose={() => setIsBadgeModalOpen(false)}
+        badges={badgeTemplates}
+        onSaveBadges={setBadgeTemplates}
       />
     </>
   );
