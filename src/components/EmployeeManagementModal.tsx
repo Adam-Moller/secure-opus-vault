@@ -6,20 +6,22 @@ import { Plus, Search } from "lucide-react";
 import { EmployeeCard } from "@/components/EmployeeCard";
 import { EmployeeModal } from "@/components/EmployeeModal";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import type { Store, Employee } from "@/types/store";
+import type { Store, Employee, BadgeTemplate } from "@/types/store";
 
 interface EmployeeManagementModalProps {
   open: boolean;
   onClose: () => void;
   store: Store | undefined;
   onSaveStore: (store: Store) => void;
+  badgeTemplates?: BadgeTemplate[];
 }
 
 export const EmployeeManagementModal = ({ 
   open, 
   onClose, 
   store,
-  onSaveStore 
+  onSaveStore,
+  badgeTemplates = []
 }: EmployeeManagementModalProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isEmployeeModalOpen, setIsEmployeeModalOpen] = useState(false);
@@ -116,6 +118,7 @@ export const EmployeeManagementModal = ({
                         setIsEmployeeModalOpen(true);
                       }}
                       onDelete={(id) => setDeleteEmployeeId(id)}
+                      badgeTemplates={badgeTemplates}
                     />
                   ))}
                 </div>
@@ -134,6 +137,7 @@ export const EmployeeManagementModal = ({
         onSave={handleSaveEmployee}
         employee={editingEmployee}
         storeName={store.nome}
+        badgeTemplates={badgeTemplates}
       />
 
       <AlertDialog open={deleteEmployeeId !== null} onOpenChange={(open) => !open && setDeleteEmployeeId(null)}>

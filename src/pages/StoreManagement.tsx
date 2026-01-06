@@ -386,6 +386,7 @@ export const StoreManagement = ({
         }}
         store={selectedStoreForEmployees}
         onSaveStore={onSaveStore}
+        badgeTemplates={badgeTemplates}
       />
 
       <HRLogModal
