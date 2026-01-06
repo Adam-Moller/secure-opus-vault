@@ -10,12 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
-  User, Calendar, Award, MessageSquare, Plane, Plus, Trash2, X, Check 
+  User, Calendar, Award, MessageSquare, Plane, Plus, Trash2, X, Check, AlertTriangle, FileText
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import * as LucideIcons from "lucide-react";
-import type { Employee, EmployeeType, BadgeTemplate, ScheduledVacation, Observation, EmployeeBadge } from "@/types/store";
+import type { Employee, EmployeeType, BadgeTemplate, ScheduledVacation, Observation, EmployeeBadge, AbsenceLog } from "@/types/store";
 
 interface EmployeeModalProps {
   open: boolean;
@@ -62,6 +62,15 @@ export const EmployeeModal = ({
   
   // Férias form state
   const [newVacation, setNewVacation] = useState({ dataInicio: "", dataFim: "", observacao: "" });
+  
+  // Afastamento form state
+  const [newAbsence, setNewAbsence] = useState<{
+    data: string;
+    tipo: AbsenceLog["tipo"];
+    motivo: string;
+    diasAfastamento: string;
+    dataRetorno: string;
+  }>({ data: "", tipo: "Falta", motivo: "", diasAfastamento: "", dataRetorno: "" });
   
   // Observação form state
   const [newObservation, setNewObservation] = useState("");
@@ -123,6 +132,31 @@ export const EmployeeModal = ({
       feriasProgramadas: prev.feriasProgramadas.map(v => 
         v.id === id ? { ...v, status } : v
       ),
+    }));
+  };
+
+  // Afastamento handlers
+  const addAbsence = () => {
+    if (!newAbsence.data || !newAbsence.motivo.trim()) return;
+    const absence: AbsenceLog = {
+      id: crypto.randomUUID(),
+      data: newAbsence.data,
+      tipo: newAbsence.tipo,
+      motivo: newAbsence.motivo.trim(),
+      diasAfastamento: newAbsence.diasAfastamento ? parseInt(newAbsence.diasAfastamento) : undefined,
+      dataRetorno: newAbsence.dataRetorno || undefined,
+    };
+    setFormData(prev => ({
+      ...prev,
+      logAfastamentos: [absence, ...prev.logAfastamentos],
+    }));
+    setNewAbsence({ data: "", tipo: "Falta", motivo: "", diasAfastamento: "", dataRetorno: "" });
+  };
+
+  const removeAbsence = (id: string) => {
+    setFormData(prev => ({
+      ...prev,
+      logAfastamentos: prev.logAfastamentos.filter(a => a.id !== id),
     }));
   };
 
@@ -190,6 +224,24 @@ export const EmployeeModal = ({
     }
   };
 
+  const getAbsenceTypeColor = (tipo: AbsenceLog["tipo"]) => {
+    switch (tipo) {
+      case "Falta": return "bg-red-500/10 text-red-700 border-red-500/20";
+      case "Atestado": return "bg-amber-500/10 text-amber-700 border-amber-500/20";
+      case "Afastamento": return "bg-orange-500/10 text-orange-700 border-orange-500/20";
+      case "Licenca": return "bg-purple-500/10 text-purple-700 border-purple-500/20";
+    }
+  };
+
+  const getAbsenceTypeLabel = (tipo: AbsenceLog["tipo"]) => {
+    switch (tipo) {
+      case "Falta": return "Falta";
+      case "Atestado": return "Atestado";
+      case "Afastamento": return "Afastamento";
+      case "Licenca": return "Licença";
+    }
+  };
+
   const availableBadges = badgeTemplates.filter(
     t => !formData.badges.some(b => b.badgeTemplateId === t.id)
   );
@@ -205,20 +257,24 @@ export const EmployeeModal = ({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid grid-cols-4 w-full shrink-0">
-            <TabsTrigger value="dados" className="gap-1">
+          <TabsList className="grid grid-cols-5 w-full shrink-0">
+            <TabsTrigger value="dados" className="gap-1 text-xs sm:text-sm px-1 sm:px-3">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Dados</span>
             </TabsTrigger>
-            <TabsTrigger value="ferias" className="gap-1">
+            <TabsTrigger value="ferias" className="gap-1 text-xs sm:text-sm px-1 sm:px-3">
               <Plane className="w-4 h-4" />
               <span className="hidden sm:inline">Férias</span>
             </TabsTrigger>
-            <TabsTrigger value="badges" className="gap-1">
+            <TabsTrigger value="afastamentos" className="gap-1 text-xs sm:text-sm px-1 sm:px-3">
+              <AlertTriangle className="w-4 h-4" />
+              <span className="hidden sm:inline">Afastam.</span>
+            </TabsTrigger>
+            <TabsTrigger value="badges" className="gap-1 text-xs sm:text-sm px-1 sm:px-3">
               <Award className="w-4 h-4" />
               <span className="hidden sm:inline">Badges</span>
             </TabsTrigger>
-            <TabsTrigger value="observacoes" className="gap-1">
+            <TabsTrigger value="observacoes" className="gap-1 text-xs sm:text-sm px-1 sm:px-3">
               <MessageSquare className="w-4 h-4" />
               <span className="hidden sm:inline">Notas</span>
             </TabsTrigger>
@@ -416,6 +472,131 @@ export const EmployeeModal = ({
                               <Trash2 className="w-3 h-3" />
                             </Button>
                           </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Afastamentos */}
+              <TabsContent value="afastamentos" className="mt-0 space-y-4">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Plus className="w-4 h-4" />
+                      Registrar Afastamento
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Data *</Label>
+                        <Input
+                          type="date"
+                          value={newAbsence.data}
+                          onChange={e => setNewAbsence(prev => ({ ...prev, data: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Tipo *</Label>
+                        <Select
+                          value={newAbsence.tipo}
+                          onValueChange={(value) => setNewAbsence(prev => ({ ...prev, tipo: value as AbsenceLog["tipo"] }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover">
+                            <SelectItem value="Falta">Falta</SelectItem>
+                            <SelectItem value="Atestado">Atestado</SelectItem>
+                            <SelectItem value="Afastamento">Afastamento</SelectItem>
+                            <SelectItem value="Licenca">Licença</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Motivo *</Label>
+                      <Input
+                        placeholder="Descreva o motivo do afastamento"
+                        value={newAbsence.motivo}
+                        onChange={e => setNewAbsence(prev => ({ ...prev, motivo: e.target.value }))}
+                        maxLength={200}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Dias de Afastamento</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          placeholder="Qtd dias"
+                          value={newAbsence.diasAfastamento}
+                          onChange={e => setNewAbsence(prev => ({ ...prev, diasAfastamento: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Data Retorno</Label>
+                        <Input
+                          type="date"
+                          value={newAbsence.dataRetorno}
+                          onChange={e => setNewAbsence(prev => ({ ...prev, dataRetorno: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <Button type="button" size="sm" onClick={addAbsence} className="w-full">
+                      <Plus className="w-4 h-4 mr-1" />
+                      Adicionar
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {formData.logAfastamentos.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                    <p>Nenhum afastamento registrado</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+                      <span>Total: {formData.logAfastamentos.length} registro(s)</span>
+                      <span>
+                        Faltas: {formData.logAfastamentos.filter(a => a.tipo === "Falta").length}
+                      </span>
+                    </div>
+                    {formData.logAfastamentos.map(absence => (
+                      <Card key={absence.id} className="p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <AlertTriangle className="w-4 h-4 text-muted-foreground shrink-0" />
+                              <span className="font-medium text-sm">
+                                {formatDate(absence.data)}
+                              </span>
+                              <Badge variant="outline" className={getAbsenceTypeColor(absence.tipo)}>
+                                {getAbsenceTypeLabel(absence.tipo)}
+                              </Badge>
+                            </div>
+                            <p className="text-sm">{absence.motivo}</p>
+                            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                              {absence.diasAfastamento && (
+                                <span>{absence.diasAfastamento} dia(s)</span>
+                              )}
+                              {absence.dataRetorno && (
+                                <span>Retorno: {formatDate(absence.dataRetorno)}</span>
+                              )}
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 shrink-0"
+                            onClick={() => removeAbsence(absence.id)}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
                         </div>
                       </Card>
                     ))}
