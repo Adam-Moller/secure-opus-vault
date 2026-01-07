@@ -10,12 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
-  User, Calendar, Award, MessageSquare, Plane, Plus, Trash2, X, Check, AlertTriangle, FileText
+  User, Calendar, Award, MessageSquare, Plane, Plus, Trash2, X, Check, AlertTriangle, FileText, Trophy, ArrowRightLeft
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import * as LucideIcons from "lucide-react";
-import type { Employee, EmployeeType, BadgeTemplate, ScheduledVacation, Observation, EmployeeBadge, AbsenceLog } from "@/types/store";
+import type { Employee, EmployeeType, BadgeTemplate, ScheduledVacation, Observation, EmployeeBadge, AbsenceLog, Achievement, Store } from "@/types/store";
 
 interface EmployeeModalProps {
   open: boolean;
@@ -23,6 +23,8 @@ interface EmployeeModalProps {
   onSave: (employee: Employee) => void;
   employee?: Employee;
   storeName: string;
+  storeId: string;
+  stores?: Store[];
   badgeTemplates?: BadgeTemplate[];
 }
 
@@ -55,6 +57,8 @@ export const EmployeeModal = ({
   onSave, 
   employee, 
   storeName,
+  storeId,
+  stores = [],
   badgeTemplates = []
 }: EmployeeModalProps) => {
   const [formData, setFormData] = useState<Omit<Employee, "id">>(emptyEmployee);
@@ -71,6 +75,15 @@ export const EmployeeModal = ({
     diasAfastamento: string;
     dataRetorno: string;
   }>({ data: "", tipo: "Falta", motivo: "", diasAfastamento: "", dataRetorno: "" });
+  
+  // Conquista form state
+  const [newAchievement, setNewAchievement] = useState<{
+    tipo: Achievement["tipo"];
+    titulo: string;
+    descricao: string;
+    lojaDestinoId: string;
+    cargoNovo: EmployeeType;
+  }>({ tipo: "Reconhecimento", titulo: "", descricao: "", lojaDestinoId: "", cargoNovo: "Consultor" });
   
   // Observação form state
   const [newObservation, setNewObservation] = useState("");
@@ -160,6 +173,47 @@ export const EmployeeModal = ({
     }));
   };
 
+  // Conquista handlers
+  const addAchievement = () => {
+    if (!newAchievement.titulo.trim()) return;
+    
+    const achievement: Achievement = {
+      id: crypto.randomUUID(),
+      data: new Date().toISOString().split("T")[0],
+      tipo: newAchievement.tipo,
+      titulo: newAchievement.titulo.trim(),
+      descricao: newAchievement.descricao.trim(),
+    };
+
+    // Para transferência, adiciona info das lojas
+    if (newAchievement.tipo === "Transferencia" && newAchievement.lojaDestinoId) {
+      const lojaDestino = stores.find(s => s.id === newAchievement.lojaDestinoId);
+      achievement.lojaOrigemId = storeId;
+      achievement.lojaOrigemNome = storeName;
+      achievement.lojaDestinoId = newAchievement.lojaDestinoId;
+      achievement.lojaDestinoNome = lojaDestino?.nome || "";
+    }
+
+    // Para promoção, adiciona info dos cargos
+    if (newAchievement.tipo === "Promocao") {
+      achievement.cargoAnterior = formData.tipo;
+      achievement.cargoNovo = newAchievement.cargoNovo;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      conquistas: [achievement, ...prev.conquistas],
+    }));
+    setNewAchievement({ tipo: "Reconhecimento", titulo: "", descricao: "", lojaDestinoId: "", cargoNovo: "Consultor" });
+  };
+
+  const removeAchievement = (id: string) => {
+    setFormData(prev => ({
+      ...prev,
+      conquistas: prev.conquistas.filter(a => a.id !== id),
+    }));
+  };
+
   // Observação handlers
   const addObservation = () => {
     if (!newObservation.trim()) return;
@@ -242,6 +296,39 @@ export const EmployeeModal = ({
     }
   };
 
+  const getAchievementTypeColor = (tipo: Achievement["tipo"]) => {
+    switch (tipo) {
+      case "Promocao": return "bg-green-500/10 text-green-700 border-green-500/20";
+      case "Transferencia": return "bg-blue-500/10 text-blue-700 border-blue-500/20";
+      case "Reconhecimento": return "bg-yellow-500/10 text-yellow-700 border-yellow-500/20";
+      case "Meta": return "bg-purple-500/10 text-purple-700 border-purple-500/20";
+      case "Treinamento": return "bg-cyan-500/10 text-cyan-700 border-cyan-500/20";
+      case "Outro": return "bg-gray-500/10 text-gray-700 border-gray-500/20";
+    }
+  };
+
+  const getAchievementTypeLabel = (tipo: Achievement["tipo"]) => {
+    switch (tipo) {
+      case "Promocao": return "Promoção";
+      case "Transferencia": return "Transferência";
+      case "Reconhecimento": return "Reconhecimento";
+      case "Meta": return "Meta Alcançada";
+      case "Treinamento": return "Treinamento";
+      case "Outro": return "Outro";
+    }
+  };
+
+  const getAchievementIcon = (tipo: Achievement["tipo"]) => {
+    switch (tipo) {
+      case "Promocao": return Trophy;
+      case "Transferencia": return ArrowRightLeft;
+      case "Reconhecimento": return Award;
+      case "Meta": return Trophy;
+      case "Treinamento": return FileText;
+      case "Outro": return Calendar;
+    }
+  };
+
   const availableBadges = badgeTemplates.filter(
     t => !formData.badges.some(b => b.badgeTemplateId === t.id)
   );
@@ -257,24 +344,28 @@ export const EmployeeModal = ({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid grid-cols-5 w-full shrink-0">
-            <TabsTrigger value="dados" className="gap-1 text-xs sm:text-sm px-1 sm:px-3">
+          <TabsList className="grid grid-cols-6 w-full shrink-0">
+            <TabsTrigger value="dados" className="gap-1 text-xs sm:text-sm px-1 sm:px-2">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Dados</span>
             </TabsTrigger>
-            <TabsTrigger value="ferias" className="gap-1 text-xs sm:text-sm px-1 sm:px-3">
+            <TabsTrigger value="ferias" className="gap-1 text-xs sm:text-sm px-1 sm:px-2">
               <Plane className="w-4 h-4" />
               <span className="hidden sm:inline">Férias</span>
             </TabsTrigger>
-            <TabsTrigger value="afastamentos" className="gap-1 text-xs sm:text-sm px-1 sm:px-3">
+            <TabsTrigger value="afastamentos" className="gap-1 text-xs sm:text-sm px-1 sm:px-2">
               <AlertTriangle className="w-4 h-4" />
               <span className="hidden sm:inline">Afastam.</span>
             </TabsTrigger>
-            <TabsTrigger value="badges" className="gap-1 text-xs sm:text-sm px-1 sm:px-3">
+            <TabsTrigger value="conquistas" className="gap-1 text-xs sm:text-sm px-1 sm:px-2">
+              <Trophy className="w-4 h-4" />
+              <span className="hidden sm:inline">Conquist.</span>
+            </TabsTrigger>
+            <TabsTrigger value="badges" className="gap-1 text-xs sm:text-sm px-1 sm:px-2">
               <Award className="w-4 h-4" />
               <span className="hidden sm:inline">Badges</span>
             </TabsTrigger>
-            <TabsTrigger value="observacoes" className="gap-1 text-xs sm:text-sm px-1 sm:px-3">
+            <TabsTrigger value="observacoes" className="gap-1 text-xs sm:text-sm px-1 sm:px-2">
               <MessageSquare className="w-4 h-4" />
               <span className="hidden sm:inline">Notas</span>
             </TabsTrigger>
@@ -600,6 +691,160 @@ export const EmployeeModal = ({
                         </div>
                       </Card>
                     ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Conquistas */}
+              <TabsContent value="conquistas" className="mt-0 space-y-4">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Plus className="w-4 h-4" />
+                      Registrar Conquista
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Tipo *</Label>
+                        <Select
+                          value={newAchievement.tipo}
+                          onValueChange={(value) => setNewAchievement(prev => ({ ...prev, tipo: value as Achievement["tipo"] }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover">
+                            <SelectItem value="Reconhecimento">Reconhecimento</SelectItem>
+                            <SelectItem value="Promocao">Promoção</SelectItem>
+                            <SelectItem value="Meta">Meta Alcançada</SelectItem>
+                            <SelectItem value="Treinamento">Treinamento</SelectItem>
+                            <SelectItem value="Transferencia">Transferência</SelectItem>
+                            <SelectItem value="Outro">Outro</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Título *</Label>
+                        <Input
+                          placeholder="Ex: Melhor vendedor do mês"
+                          value={newAchievement.titulo}
+                          onChange={e => setNewAchievement(prev => ({ ...prev, titulo: e.target.value }))}
+                          maxLength={100}
+                        />
+                      </div>
+                    </div>
+                    
+                    {newAchievement.tipo === "Promocao" && (
+                      <div className="space-y-1">
+                        <Label className="text-xs">Novo Cargo</Label>
+                        <Select
+                          value={newAchievement.cargoNovo}
+                          onValueChange={(value) => setNewAchievement(prev => ({ ...prev, cargoNovo: value as EmployeeType }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover">
+                            <SelectItem value="Gerente">Gerente</SelectItem>
+                            <SelectItem value="Senior">Sênior</SelectItem>
+                            <SelectItem value="Consultor">Consultor</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {newAchievement.tipo === "Transferencia" && stores.length > 1 && (
+                      <div className="space-y-1">
+                        <Label className="text-xs">Loja Destino</Label>
+                        <Select
+                          value={newAchievement.lojaDestinoId}
+                          onValueChange={(value) => setNewAchievement(prev => ({ ...prev, lojaDestinoId: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a loja destino" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover">
+                            {stores.filter(s => s.id !== storeId).map(s => (
+                              <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    <div className="space-y-1">
+                      <Label className="text-xs">Descrição</Label>
+                      <Input
+                        placeholder="Detalhes da conquista..."
+                        value={newAchievement.descricao}
+                        onChange={e => setNewAchievement(prev => ({ ...prev, descricao: e.target.value }))}
+                        maxLength={200}
+                      />
+                    </div>
+                    <Button type="button" size="sm" onClick={addAchievement} className="w-full">
+                      <Plus className="w-4 h-4 mr-1" />
+                      Adicionar
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {formData.conquistas.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Trophy className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                    <p>Nenhuma conquista registrada</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="text-sm text-muted-foreground mb-2">
+                      Total: {formData.conquistas.length} conquista(s)
+                    </div>
+                    {formData.conquistas.map(achievement => {
+                      const AchievementIcon = getAchievementIcon(achievement.tipo);
+                      return (
+                        <Card key={achievement.id} className="p-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <AchievementIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+                                <span className="font-medium text-sm">
+                                  {achievement.titulo}
+                                </span>
+                                <Badge variant="outline" className={getAchievementTypeColor(achievement.tipo)}>
+                                  {getAchievementTypeLabel(achievement.tipo)}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground mb-1">
+                                {formatDate(achievement.data)}
+                              </p>
+                              {achievement.descricao && (
+                                <p className="text-sm">{achievement.descricao}</p>
+                              )}
+                              {achievement.tipo === "Transferencia" && achievement.lojaDestinoNome && (
+                                <p className="text-xs text-blue-600 mt-1">
+                                  {achievement.lojaOrigemNome} → {achievement.lojaDestinoNome}
+                                </p>
+                              )}
+                              {achievement.tipo === "Promocao" && achievement.cargoNovo && (
+                                <p className="text-xs text-green-600 mt-1">
+                                  {achievement.cargoAnterior} → {achievement.cargoNovo}
+                                </p>
+                              )}
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 shrink-0"
+                              onClick={() => removeAchievement(achievement.id)}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </Card>
+                      );
+                    })}
                   </div>
                 )}
               </TabsContent>

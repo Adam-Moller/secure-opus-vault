@@ -12,6 +12,7 @@ interface EmployeeManagementModalProps {
   open: boolean;
   onClose: () => void;
   store: Store | undefined;
+  stores: Store[];
   onSaveStore: (store: Store) => void;
   badgeTemplates?: BadgeTemplate[];
 }
@@ -20,6 +21,7 @@ export const EmployeeManagementModal = ({
   open, 
   onClose, 
   store,
+  stores,
   onSaveStore,
   badgeTemplates = []
 }: EmployeeManagementModalProps) => {
@@ -137,6 +139,8 @@ export const EmployeeManagementModal = ({
         onSave={handleSaveEmployee}
         employee={editingEmployee}
         storeName={store.nome}
+        storeId={store.id}
+        stores={stores}
         badgeTemplates={badgeTemplates}
       />
 

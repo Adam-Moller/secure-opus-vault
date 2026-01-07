@@ -385,6 +385,7 @@ export const StoreManagement = ({
           setSelectedStoreForEmployees(undefined);
         }}
         store={selectedStoreForEmployees}
+        stores={stores}
         onSaveStore={onSaveStore}
         badgeTemplates={badgeTemplates}
       />
