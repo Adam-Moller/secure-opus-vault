@@ -1,4 +1,4 @@
-import { User, Pencil, Trash2, Calendar, Phone, Mail, Award } from "lucide-react";
+import { User, Pencil, Trash2, Calendar, Phone, Mail, Award, AlertTriangle, Trophy } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +57,27 @@ export const EmployeeCard = ({ employee, onEdit, onDelete, badgeTemplates = [] }
   const employeeBadges = employee.badges
     ?.map(b => badgeTemplates.find(t => t.id === b.badgeTemplateId))
     .filter(Boolean) || [];
+
+  const absencesCount = employee.logAfastamentos?.length || 0;
+  const achievementsCount = employee.conquistas?.length || 0;
+  
+  // Recent absences (last 30 days)
+  const recentAbsences = employee.logAfastamentos?.filter(a => {
+    const absenceDate = new Date(a.data);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    return absenceDate >= thirtyDaysAgo;
+  }) || [];
+  
+  const getAbsenceTypeLabel = (tipo: string) => {
+    switch (tipo) {
+      case "Falta": return "Falta";
+      case "Atestado": return "Atestado";
+      case "Afastamento": return "Afastamento";
+      case "Licenca": return "Licença";
+      default: return tipo;
+    }
+  };
 
   return (
     <Card className="hover:bg-accent/50 transition-colors">
@@ -143,13 +164,68 @@ export const EmployeeCard = ({ employee, onEdit, onDelete, badgeTemplates = [] }
           </div>
         )}
 
-        {/* Observations counter */}
-        {(employee.observacoes?.length || 0) > 0 && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <span className="bg-muted px-1.5 py-0.5 rounded">
-              {employee.observacoes.length} {employee.observacoes.length === 1 ? "nota" : "notas"}
-            </span>
-          </div>
+        {/* Indicators row: Observations, Absences, Achievements */}
+        {((employee.observacoes?.length || 0) > 0 || absencesCount > 0 || achievementsCount > 0) && (
+          <TooltipProvider>
+            <div className="flex items-center gap-2 flex-wrap text-xs">
+              {/* Observations counter */}
+              {(employee.observacoes?.length || 0) > 0 && (
+                <span className="bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                  {employee.observacoes.length} {employee.observacoes.length === 1 ? "nota" : "notas"}
+                </span>
+              )}
+              
+              {/* Absences indicator */}
+              {absencesCount > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded ${
+                      recentAbsences.length > 0 
+                        ? "bg-orange-500/10 text-orange-700" 
+                        : "bg-muted text-muted-foreground"
+                    }`}>
+                      <AlertTriangle className="w-3 h-3" />
+                      <span>{absencesCount}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="font-medium">{absencesCount} afastamento{absencesCount !== 1 ? "s" : ""}</p>
+                    {recentAbsences.length > 0 && (
+                      <p className="text-xs text-orange-400">{recentAbsences.length} nos últimos 30 dias</p>
+                    )}
+                    {recentAbsences.slice(0, 3).map((a, i) => (
+                      <p key={i} className="text-xs text-muted-foreground">
+                        • {getAbsenceTypeLabel(a.tipo)}: {a.motivo}
+                      </p>
+                    ))}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              
+              {/* Achievements indicator */}
+              {achievementsCount > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700">
+                      <Trophy className="w-3 h-3" />
+                      <span>{achievementsCount}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="font-medium">{achievementsCount} conquista{achievementsCount !== 1 ? "s" : ""}</p>
+                    {employee.conquistas?.slice(0, 3).map((c, i) => (
+                      <p key={i} className="text-xs text-muted-foreground">
+                        • {c.tipo}: {c.titulo}
+                      </p>
+                    ))}
+                    {achievementsCount > 3 && (
+                      <p className="text-xs text-muted-foreground">+{achievementsCount - 3} mais</p>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+          </TooltipProvider>
         )}
 
         <div className="flex gap-2 pt-2">
