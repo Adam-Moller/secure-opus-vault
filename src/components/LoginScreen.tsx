@@ -58,9 +58,17 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
 
     setIsLoading(true);
     try {
+      console.log("[LoginScreen] Loading file:", selectedFileName);
       const data = await loadFromIndexedDB(selectedFileName, password);
+      console.log("[LoginScreen] File loaded successfully:", {
+        fileName: data.fileName,
+        crmType: data.crmType,
+        dataType: typeof data.data,
+        isArray: Array.isArray(data.data)
+      });
       onLogin(data, password);
     } catch (error: any) {
+      console.error("[LoginScreen] Error loading file:", error);
       toast({
         title: "Erro ao Abrir Arquivo",
         description: error.message || "Falha ao descriptografar arquivo. Verifique sua senha.",
