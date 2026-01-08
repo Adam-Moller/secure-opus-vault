@@ -26,6 +26,7 @@ export async function saveToFileSystem(
   password: string,
   fileHandle?: FileSystemFileHandle
 ): Promise<FileSystemFileHandle> {
+  console.log("[FileStorage] Saving to file system:", data.fileName);
   const jsonString = JSON.stringify(data);
   const encrypted = await encryptData(jsonString, password);
 
@@ -50,7 +51,8 @@ export async function saveToFileSystem(
   const writable = await handle.createWritable();
   await writable.write(encrypted);
   await writable.close();
-
+  
+  console.log("[FileStorage] Successfully saved to file system");
   return handle;
 }
 
@@ -76,8 +78,12 @@ export async function loadFromFileSystem(
 
   const file = await handle.getFile();
   const encrypted = await file.text();
+  console.log("[FileStorage] Loading from file system, encrypted length:", encrypted.length);
+  
   const decrypted = await decryptData(encrypted, password);
   const data = JSON.parse(decrypted);
+  
+  console.log("[FileStorage] Loaded data:", { fileName: data.fileName, crmType: data.crmType });
 
   return { data, handle };
 }
@@ -87,9 +93,26 @@ export async function saveToIndexedDB(
   data: EncryptedData,
   password: string
 ): Promise<void> {
+  console.log("[FileStorage] Saving to IndexedDB:", data.fileName);
+  console.log("[FileStorage] Data structure:", {
+    crmType: data.crmType,
+    dataType: typeof data.data,
+    isArray: Array.isArray(data.data),
+    ...(data.crmType === "workforce" && !Array.isArray(data.data) && {
+      stores: (data.data as any).stores?.length || 0,
+      employees: (data.data as any).employees?.length || 0,
+      badgeTemplates: (data.data as any).badgeTemplates?.length || 0,
+    })
+  });
+  
   const jsonString = JSON.stringify(data);
+  console.log("[FileStorage] JSON string length:", jsonString.length);
+  
   const encrypted = await encryptData(jsonString, password);
+  console.log("[FileStorage] Encrypted length:", encrypted.length);
+  
   await saveToIDB(data.fileName, encrypted);
+  console.log("[FileStorage] Successfully saved to IndexedDB");
 }
 
 // Load from IndexedDB (Mobile/Fallback)
@@ -97,16 +120,40 @@ export async function loadFromIndexedDB(
   fileName: string,
   password: string
 ): Promise<EncryptedData> {
+  console.log("[FileStorage] Loading from IndexedDB:", fileName);
+  
   const encrypted = await loadFromIDB(fileName);
   if (!encrypted) {
-    throw new Error("File not found in local storage");
+    console.error("[FileStorage] File not found in IndexedDB:", fileName);
+    throw new Error("Arquivo não encontrado no armazenamento local");
   }
+  
+  console.log("[FileStorage] Found encrypted data, length:", encrypted.length);
+  
   const decrypted = await decryptData(encrypted, password);
-  return JSON.parse(decrypted);
+  console.log("[FileStorage] Decrypted data length:", decrypted.length);
+  
+  const data = JSON.parse(decrypted) as EncryptedData;
+  
+  console.log("[FileStorage] Parsed data:", {
+    fileName: data.fileName,
+    crmType: data.crmType,
+    dataType: typeof data.data,
+    isArray: Array.isArray(data.data),
+    ...(data.crmType === "workforce" && !Array.isArray(data.data) && {
+      stores: (data.data as any).stores?.length || 0,
+      employees: (data.data as any).employees?.length || 0,
+      badgeTemplates: (data.data as any).badgeTemplates?.length || 0,
+    })
+  });
+  
+  return data;
 }
 
 // Download encrypted file (Export/Backup)
 export async function downloadEncryptedFile(data: EncryptedData, password: string) {
+  console.log("[FileStorage] Downloading encrypted file:", data.fileName);
+  
   const jsonString = JSON.stringify(data);
   const encrypted = await encryptData(jsonString, password);
 
@@ -123,6 +170,8 @@ export async function downloadEncryptedFile(data: EncryptedData, password: strin
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+  
+  console.log("[FileStorage] Download initiated");
 }
 
 // Upload encrypted file (Mobile/Fallback)
@@ -135,16 +184,22 @@ export async function uploadEncryptedFile(password: string): Promise<EncryptedDa
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) {
-        reject(new Error("No file selected"));
+        reject(new Error("Nenhum arquivo selecionado"));
         return;
       }
 
       try {
+        console.log("[FileStorage] Uploading file:", file.name);
         const encrypted = await file.text();
+        console.log("[FileStorage] Encrypted content length:", encrypted.length);
+        
         const decrypted = await decryptData(encrypted, password);
         const data = JSON.parse(decrypted);
+        
+        console.log("[FileStorage] Upload parsed:", { fileName: data.fileName, crmType: data.crmType });
         resolve(data);
       } catch (error) {
+        console.error("[FileStorage] Upload error:", error);
         reject(error);
       }
     };

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { LoginScreen } from "@/components/LoginScreen";
 import { OpportunityCard } from "@/components/OpportunityCard";
 import { OpportunityModal } from "@/components/OpportunityModal";
@@ -9,10 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Download, LogOut, Save, Search } from "lucide-react";
-import type { Opportunity, EncryptedData, Interaction, isWorkforceData } from "@/types/opportunity";
+import type { Opportunity, EncryptedData, Interaction } from "@/types/opportunity";
 import type { Store, WorkforceData } from "@/types/store";
 import type { CRMType } from "@/types/crmData";
-import { ensureWorkforceData, needsMigration } from "@/utils/dataMigration";
+import { ensureWorkforceData } from "@/utils/dataMigration";
 import {
   isFileSystemSupported,
   saveToFileSystem,
@@ -27,8 +27,17 @@ const Index = () => {
   const [currentFileName, setCurrentFileName] = useState("");
   const [currentCrmType, setCurrentCrmType] = useState<CRMType>("sales");
   const [fileHandle, setFileHandle] = useState<FileSystemFileHandle | undefined>();
+  
+  // Sales CRM state
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
-  const [stores, setStores] = useState<Store[]>([]);
+  
+  // Workforce CRM state - agora mantendo WorkforceData completo
+  const [workforceData, setWorkforceData] = useState<WorkforceData>({
+    stores: [],
+    employees: [],
+    badgeTemplates: []
+  });
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isOpportunityModalOpen, setIsOpportunityModalOpen] = useState(false);
@@ -36,10 +45,16 @@ const Index = () => {
   const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | undefined>();
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | undefined>();
   const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
   const { toast } = useToast();
   const supportsFileSystem = isFileSystemSupported();
+  
+  // Ref para evitar salvamento em loop
+  const isInitialLoad = useRef(true);
 
   const handleLogin = (data: EncryptedData, loginPassword: string, handle?: FileSystemFileHandle) => {
+    console.log("[Index] Login with data:", { fileName: data.fileName, crmType: data.crmType });
+    
     setPassword(loginPassword);
     setCurrentFileName(data.fileName);
     const crmType = data.crmType || "sales";
@@ -48,23 +63,26 @@ const Index = () => {
     
     let itemCount = 0;
     if (crmType === "sales") {
-      const opportunities = data.data as Opportunity[];
-      setOpportunities(opportunities);
-      itemCount = opportunities.length;
+      const opps = data.data as Opportunity[];
+      setOpportunities(opps);
+      itemCount = opps.length;
+      console.log("[Index] Loaded sales data:", opps.length, "opportunities");
     } else {
-      // Handle both legacy Store[] and new WorkforceData format
-      if (Array.isArray(data.data)) {
-        // Legacy format - migrate (data.data is Store[])
-        setStores(data.data as unknown as Store[]);
-        itemCount = data.data.length;
-      } else {
-        // New WorkforceData format
-        const workforceData = data.data as WorkforceData;
-        setStores(workforceData.stores);
-        itemCount = workforceData.stores.length;
-      }
+      // Usa ensureWorkforceData para garantir estrutura correta
+      // data.data pode ser Store[] (legado) ou WorkforceData (novo)
+      const rawData = data.data as Store[] | WorkforceData;
+      const wfData = ensureWorkforceData(rawData);
+      setWorkforceData(wfData);
+      itemCount = wfData.stores.length;
+      console.log("[Index] Loaded workforce data:", {
+        stores: wfData.stores.length,
+        employees: wfData.employees.length,
+        badgeTemplates: wfData.badgeTemplates.length
+      });
     }
+    
     setIsLoggedIn(true);
+    isInitialLoad.current = true; // Marca como carregamento inicial para evitar auto-save imediato
     
     // Update registry
     updateFileInRegistry(data.fileName, {
@@ -79,21 +97,31 @@ const Index = () => {
       title: "Login Bem-Sucedido",
       description: `Carregadas ${itemCount} ${itemLabel} de ${data.fileName}`,
     });
+    
+    // Reset o flag após um delay para permitir auto-save futuro
+    setTimeout(() => {
+      isInitialLoad.current = false;
+    }, 3000);
   };
 
   const handleCreateNew = async (newPassword: string, fileName: string, crmType: CRMType) => {
+    console.log("[Index] Creating new CRM:", { fileName, crmType });
+    
     setPassword(newPassword);
     setCurrentFileName(fileName);
     setCurrentCrmType(crmType);
     
     if (crmType === "sales") {
-      const emptyOpportunities: Opportunity[] = [];
-      setOpportunities(emptyOpportunities);
+      setOpportunities([]);
     } else {
-      const emptyStores: Store[] = [];
-      setStores(emptyStores);
+      setWorkforceData({
+        stores: [],
+        employees: [],
+        badgeTemplates: []
+      });
     }
     setIsLoggedIn(true);
+    isInitialLoad.current = true;
     
     // Add to registry
     addFileToRegistry({
@@ -107,15 +135,20 @@ const Index = () => {
     // Save initial empty state to IndexedDB
     try {
       const now = new Date().toISOString();
+      const initialData: Opportunity[] | WorkforceData = crmType === "sales" 
+        ? [] 
+        : { stores: [], employees: [], badgeTemplates: [] };
+      
       const encryptedData: EncryptedData = {
         fileName,
         createdDate: now,
         lastModified: now,
         crmType,
-        data: crmType === "sales" ? [] : [],
+        data: initialData,
       };
       
       await saveToIndexedDB(encryptedData, newPassword);
+      console.log("[Index] Initial data saved successfully");
       
       const crmTypeLabel = crmType === "sales" ? "CRM de Vendas" : "CRM de Gestão de Lojas";
       toast({
@@ -123,25 +156,51 @@ const Index = () => {
         description: `${fileName} (${crmTypeLabel}) está pronto para uso`,
       });
     } catch (error: any) {
+      console.error("[Index] Error creating new CRM:", error);
       toast({
         title: "Erro de Criação",
         description: error.message || "Falha ao criar arquivo",
         variant: "destructive",
       });
     }
+    
+    setTimeout(() => {
+      isInitialLoad.current = false;
+    }, 3000);
   };
 
-  const saveData = async (data: Opportunity[] | Store[], showToast = true) => {
-    if (!currentFileName) return;
+  const saveData = async (showToast = true) => {
+    if (!currentFileName || !password) {
+      console.log("[Index] Cannot save: missing fileName or password");
+      return;
+    }
     
     setIsAutoSaving(true);
     try {
       const now = new Date().toISOString();
       
-      // For workforce CRM, wrap stores in WorkforceData structure
-      const dataToSave: Opportunity[] | WorkforceData = currentCrmType === "sales" 
-        ? (data as Opportunity[])
-        : { stores: data as Store[], employees: [], badgeTemplates: [] };
+      // Prepara os dados corretos baseado no tipo de CRM
+      let dataToSave: Opportunity[] | WorkforceData;
+      let itemCount: number;
+      
+      if (currentCrmType === "sales") {
+        dataToSave = opportunities;
+        itemCount = opportunities.length;
+      } else {
+        // Para workforce, sempre usa o workforceData completo
+        dataToSave = workforceData;
+        itemCount = workforceData.stores.length;
+      }
+      
+      console.log("[Index] Saving data:", {
+        crmType: currentCrmType,
+        fileName: currentFileName,
+        itemCount,
+        ...(currentCrmType === "workforce" && {
+          employees: workforceData.employees.length,
+          badgeTemplates: workforceData.badgeTemplates.length
+        })
+      });
       
       const encryptedData: EncryptedData = {
         fileName: currentFileName,
@@ -154,18 +213,22 @@ const Index = () => {
       if (supportsFileSystem && fileHandle) {
         const newHandle = await saveToFileSystem(encryptedData, password, fileHandle);
         setFileHandle(newHandle);
-      } else if (supportsFileSystem) {
+      } else if (supportsFileSystem && !fileHandle) {
+        // Desktop sem handle - pede para usuário escolher local
         const newHandle = await saveToFileSystem(encryptedData, password);
         setFileHandle(newHandle);
       } else {
+        // Mobile/Fallback - salva no IndexedDB
         await saveToIndexedDB(encryptedData, password);
       }
 
       // Update registry
       updateFileInRegistry(currentFileName, {
         lastModified: now,
-        itemCount: data.length,
+        itemCount,
       });
+      
+      setLastSaveTime(new Date());
 
       if (showToast) {
         toast({
@@ -174,6 +237,7 @@ const Index = () => {
         });
       }
     } catch (error: any) {
+      console.error("[Index] Error saving data:", error);
       toast({
         title: "Erro ao Salvar",
         description: error.message || "Falha ao salvar dados",
@@ -190,7 +254,6 @@ const Index = () => {
       : [...opportunities, opportunity];
 
     setOpportunities(newOpportunities);
-    saveData(newOpportunities);
     setEditingOpportunity(undefined);
   };
 
@@ -199,7 +262,6 @@ const Index = () => {
 
     const newOpportunities = opportunities.filter((o) => o.id !== id);
     setOpportunities(newOpportunities);
-    saveData(newOpportunities);
     toast({
       title: "Opportunity Deleted",
       description: "The opportunity has been removed",
@@ -220,28 +282,34 @@ const Index = () => {
     setSelectedOpportunity(undefined);
   };
 
-  // Store handlers
+  // Store handlers - agora atualizam workforceData
   const handleSaveStore = (store: Store) => {
-    const newStores = stores.some((s) => s.id === store.id)
-      ? stores.map((s) => (s.id === store.id ? store : s))
-      : [...stores, store];
-
-    setStores(newStores);
-    saveData(newStores);
+    setWorkforceData(prev => {
+      const storeExists = prev.stores.some((s) => s.id === store.id);
+      const newStores = storeExists
+        ? prev.stores.map((s) => (s.id === store.id ? store : s))
+        : [...prev.stores, store];
+      
+      return {
+        ...prev,
+        stores: newStores
+      };
+    });
   };
 
   const handleDeleteStore = (id: string) => {
     if (!confirm("Tem certeza que deseja excluir esta loja?")) return;
 
-    const newStores = stores.filter((s) => s.id !== id);
-    setStores(newStores);
-    saveData(newStores);
+    setWorkforceData(prev => ({
+      ...prev,
+      stores: prev.stores.filter((s) => s.id !== id)
+    }));
+    
     toast({
       title: "Loja Excluída",
       description: "A loja foi removida",
     });
   };
-
 
   const handleLogout = () => {
     if (confirm("Tem certeza que deseja sair? Todas as alterações são salvas automaticamente.")) {
@@ -250,13 +318,13 @@ const Index = () => {
       setCurrentFileName("");
       setFileHandle(undefined);
       setOpportunities([]);
-      setStores([]);
+      setWorkforceData({ stores: [], employees: [], badgeTemplates: [] });
+      isInitialLoad.current = true;
     }
   };
 
   const handleManualSave = () => {
-    const data = currentCrmType === "sales" ? opportunities : stores;
-    saveData(data, true);
+    saveData(true);
   };
 
   const handleExportBackup = async () => {
@@ -264,12 +332,9 @@ const Index = () => {
     
     try {
       const now = new Date().toISOString();
-      const data = currentCrmType === "sales" ? opportunities : stores;
-      
-      // For workforce CRM, wrap stores in WorkforceData structure
       const dataToSave: Opportunity[] | WorkforceData = currentCrmType === "sales" 
-        ? (data as Opportunity[])
-        : { stores: data as Store[], employees: [], badgeTemplates: [] };
+        ? opportunities
+        : workforceData;
       
       const encryptedData: EncryptedData = {
         fileName: currentFileName,
@@ -293,19 +358,25 @@ const Index = () => {
     }
   };
 
-  // Auto-save effect
+  // Auto-save effect - agora observa workforceData ao invés de stores separado
   useEffect(() => {
-    if (isLoggedIn && currentFileName) {
-      const data = currentCrmType === "sales" ? opportunities : stores;
-      if (data.length > 0) {
-        const timer = setTimeout(() => {
-          saveData(data, false);
-        }, 2000);
-        
-        return () => clearTimeout(timer);
-      }
+    if (!isLoggedIn || !currentFileName || isInitialLoad.current) {
+      return;
     }
-  }, [opportunities, stores, isLoggedIn, currentFileName, currentCrmType]);
+    
+    const hasData = currentCrmType === "sales" 
+      ? opportunities.length > 0 
+      : workforceData.stores.length > 0;
+    
+    if (hasData) {
+      const timer = setTimeout(() => {
+        console.log("[Index] Auto-saving...");
+        saveData(false);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [opportunities, workforceData, isLoggedIn, currentFileName, currentCrmType]);
 
   const filteredOpportunities = opportunities.filter((opp) => {
     const matchesSearch =
@@ -330,6 +401,11 @@ const Index = () => {
             <div className="flex-1">
               <h1 className="text-xl md:text-2xl font-bold">CRM Seguro</h1>
               <p className="text-xs md:text-sm text-muted-foreground">{currentFileName}</p>
+              {lastSaveTime && (
+                <p className="text-xs text-muted-foreground">
+                  Último save: {lastSaveTime.toLocaleTimeString()}
+                </p>
+              )}
             </div>
             <Button onClick={handleLogout} variant="outline" size="sm" className="shrink-0">
               <LogOut className="w-4 h-4" />
@@ -355,37 +431,39 @@ const Index = () => {
             </Button>
           </div>
 
-          <div className="flex items-center gap-4 mt-4 flex-wrap">
-            <Button onClick={() => setIsOpportunityModalOpen(true)} className="shrink-0">
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Oportunidade
-            </Button>
+          {currentCrmType === "sales" && (
+            <div className="flex items-center gap-4 mt-4 flex-wrap">
+              <Button onClick={() => setIsOpportunityModalOpen(true)} className="shrink-0">
+                <Plus className="w-4 h-4 mr-2" />
+                Nova Oportunidade
+              </Button>
 
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por empresa ou contato..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por empresa ou contato..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Status</SelectItem>
+                  <SelectItem value="Lead">Lead</SelectItem>
+                  <SelectItem value="Qualificado">Qualificado</SelectItem>
+                  <SelectItem value="Proposta">Proposta</SelectItem>
+                  <SelectItem value="Negociação">Negociação</SelectItem>
+                  <SelectItem value="Fechado">Fechado</SelectItem>
+                  <SelectItem value="Perdido">Perdido</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os Status</SelectItem>
-                <SelectItem value="Lead">Lead</SelectItem>
-                <SelectItem value="Qualificado">Qualificado</SelectItem>
-                <SelectItem value="Proposta">Proposta</SelectItem>
-                <SelectItem value="Negociação">Negociação</SelectItem>
-                <SelectItem value="Fechado">Fechado</SelectItem>
-                <SelectItem value="Perdido">Perdido</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          )}
         </div>
       </header>
 
@@ -430,7 +508,7 @@ const Index = () => {
           </>
         ) : (
           <StoreManagement
-            stores={stores}
+            stores={workforceData.stores}
             onSaveStore={handleSaveStore}
             onDeleteStore={handleDeleteStore}
           />
