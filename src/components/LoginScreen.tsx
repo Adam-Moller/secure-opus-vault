@@ -94,10 +94,18 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
     setIsLoading(true);
     try {
       if (supportsFileSystem) {
+        // Desktop: load from file system and keep handle for sync
         const { data, handle } = await loadFromFileSystem(password);
         onLogin(data, password, handle);
       } else {
+        // Mobile: import file and save to IndexedDB for persistence
         const data = await uploadEncryptedFile(password);
+        
+        // Save to IndexedDB so it persists locally
+        const { saveToIndexedDB } = await import("@/utils/fileStorage");
+        await saveToIndexedDB(data, password);
+        console.log("[LoginScreen] Imported file saved to IndexedDB:", data.fileName);
+        
         onLogin(data, password);
       }
     } catch (error: any) {

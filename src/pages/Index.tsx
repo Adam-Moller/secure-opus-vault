@@ -210,16 +210,18 @@ const Index = () => {
         data: dataToSave,
       };
       
+      // SEMPRE salvar no IndexedDB primeiro (armazenamento primário)
+      await saveToIndexedDB(encryptedData, password);
+      
+      // Se estiver no desktop COM fileHandle existente, também salva no arquivo
+      // Não abre dialog de salvar - apenas atualiza arquivo já vinculado
       if (supportsFileSystem && fileHandle) {
-        const newHandle = await saveToFileSystem(encryptedData, password, fileHandle);
-        setFileHandle(newHandle);
-      } else if (supportsFileSystem && !fileHandle) {
-        // Desktop sem handle - pede para usuário escolher local
-        const newHandle = await saveToFileSystem(encryptedData, password);
-        setFileHandle(newHandle);
-      } else {
-        // Mobile/Fallback - salva no IndexedDB
-        await saveToIndexedDB(encryptedData, password);
+        try {
+          await saveToFileSystem(encryptedData, password, fileHandle);
+          console.log("[Index] Also saved to file system");
+        } catch (fsError) {
+          console.warn("[Index] Failed to save to file system, but IndexedDB save succeeded:", fsError);
+        }
       }
 
       // Update registry
@@ -233,7 +235,7 @@ const Index = () => {
       if (showToast) {
         toast({
           title: "Dados Salvos",
-          description: supportsFileSystem ? "Arquivo atualizado com sucesso" : "Salvo no armazenamento local",
+          description: "Salvo no armazenamento local",
         });
       }
     } catch (error: any) {
