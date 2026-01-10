@@ -7,13 +7,23 @@ import {
 
 const FILE_EXTENSION = ".enc";
 
+// Check if running on a mobile device
+export const isMobileDevice = () => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
+
 // Check if File System Access API is supported
+// Returns false on mobile to prevent file picker dialogs
 export const isFileSystemSupported = () => {
   // Check if we're in an iframe (Lovable preview)
   const isInIframe = window.self !== window.top;
-  
-  // File System API doesn't work in iframes due to security
   if (isInIframe) {
+    return false;
+  }
+  
+  // Mobile devices should always use IndexedDB
+  if (isMobileDevice()) {
+    console.log("[FileStorage] Mobile device detected - using IndexedDB");
     return false;
   }
   
