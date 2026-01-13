@@ -5,17 +5,16 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Lock, FileKey, Upload, FolderOpen, Plus } from "lucide-react";
+import { Lock, FileKey, Upload, Plus, HardDrive } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
-  isFileSystemSupported,
-  loadFromFileSystem,
   uploadEncryptedFile,
   loadFromIndexedDB,
+  saveToIndexedDB,
 } from "@/utils/fileStorage";
 import type { EncryptedData } from "@/types/opportunity";
 import type { CRMType } from "@/types/crmData";
-import { getFileRegistry, removeFileFromRegistry } from "@/utils/fileRegistry";
+import { verifyRegistryIntegrity, syncRegistryWithIndexedDB, removeFileFromRegistry, type VerifiedFileEntry } from "@/utils/fileRegistry";
 import { FileListItem } from "@/components/FileListItem";
 import { deleteFromIndexedDB } from "@/utils/indexedDB";
 
@@ -27,23 +26,51 @@ interface LoginScreenProps {
 export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [fileRegistry, setFileRegistry] = useState(getFileRegistry());
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [verifiedFiles, setVerifiedFiles] = useState<VerifiedFileEntry[]>([]);
   const [selectedFileName, setSelectedFileName] = useState<string>("");
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [newFileName, setNewFileName] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [crmType, setCrmType] = useState<CRMType>("sales");
   const { toast } = useToast();
-  const supportsFileSystem = isFileSystemSupported();
 
+  // Carrega e verifica arquivos na inicialização
   useEffect(() => {
-    setFileRegistry(getFileRegistry());
+    const loadAndVerifyFiles = async () => {
+      setIsVerifying(true);
+      try {
+        // Sincroniza registry com IndexedDB (adiciona arquivos órfãos)
+        await syncRegistryWithIndexedDB();
+        
+        // Verifica integridade de todos os arquivos
+        const verified = await verifyRegistryIntegrity();
+        setVerifiedFiles(verified);
+      } catch (error) {
+        console.error("[LoginScreen] Error verifying files:", error);
+      } finally {
+        setIsVerifying(false);
+      }
+    };
+    
+    loadAndVerifyFiles();
   }, []);
+
+  const refreshFileList = async () => {
+    const verified = await verifyRegistryIntegrity();
+    setVerifiedFiles(verified);
+  };
 
   const handleQuickOpen = (fileName: string) => {
     setSelectedFileName(fileName);
     setShowPasswordDialog(true);
+  };
+
+  const handleImportForFile = (fileName: string) => {
+    setSelectedFileName(fileName);
+    setShowImportDialog(true);
   };
 
   const handlePasswordSubmit = async () => {
@@ -78,14 +105,15 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
       setIsLoading(false);
       setShowPasswordDialog(false);
       setPassword("");
+      setSelectedFileName("");
     }
   };
 
-  const handleLoadFromFileSystem = async () => {
+  const handleImportSubmit = async () => {
     if (!password.trim()) {
       toast({
         title: "Senha Necessária",
-        description: "Por favor, insira sua senha mestra",
+        description: "Por favor, insira a senha do arquivo de backup",
         variant: "destructive",
       });
       return;
@@ -93,25 +121,29 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
 
     setIsLoading(true);
     try {
-      if (supportsFileSystem) {
-        // Desktop: load from file system and keep handle for sync
-        const { data, handle } = await loadFromFileSystem(password);
-        onLogin(data, password, handle);
-      } else {
-        // Mobile: import file and save to IndexedDB for persistence
-        const data = await uploadEncryptedFile(password);
-        
-        // Save to IndexedDB so it persists locally
-        const { saveToIndexedDB } = await import("@/utils/fileStorage");
-        await saveToIndexedDB(data, password);
-        console.log("[LoginScreen] Imported file saved to IndexedDB:", data.fileName);
-        
-        onLogin(data, password);
-      }
+      // Importa arquivo e salva no IndexedDB
+      const data = await uploadEncryptedFile(password);
+      await saveToIndexedDB(data, password);
+      console.log("[LoginScreen] Backup imported and saved to IndexedDB:", data.fileName);
+      
+      // Atualiza a lista de arquivos verificados
+      await refreshFileList();
+      
+      toast({
+        title: "Backup Importado",
+        description: `${data.fileName} restaurado com sucesso`,
+      });
+      
+      // Fecha dialog e faz login
+      setShowImportDialog(false);
+      setSelectedFileName("");
+      const pwd = password;
+      setPassword("");
+      onLogin(data, pwd);
     } catch (error: any) {
       toast({
-        title: "Erro ao Carregar Arquivo",
-        description: error.message || "Falha ao carregar e descriptografar arquivo",
+        title: "Erro ao Importar",
+        description: error.message || "Falha ao importar backup",
         variant: "destructive",
       });
     } finally {
@@ -167,7 +199,7 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
     try {
       await deleteFromIndexedDB(fileName);
       removeFileFromRegistry(fileName);
-      setFileRegistry(getFileRegistry());
+      await refreshFileList();
       toast({
         title: "Arquivo Removido",
         description: "Arquivo foi excluído do armazenamento local",
@@ -197,23 +229,28 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {fileRegistry.length > 0 && (
+            {isVerifying ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">Verificando arquivos...</p>
+              </div>
+            ) : verifiedFiles.length > 0 ? (
               <div className="space-y-3">
                 <h3 className="font-semibold text-sm text-muted-foreground">Seus Arquivos CRM</h3>
                 <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                  {fileRegistry.map((file) => (
+                  {verifiedFiles.map((file) => (
                     <FileListItem
                       key={file.fileName}
                       file={file}
                       onOpen={handleQuickOpen}
                       onDelete={handleDeleteFile}
+                      onImport={handleImportForFile}
                     />
                   ))}
                 </div>
               </div>
-            )}
+            ) : null}
 
-            {fileRegistry.length > 0 && (
+            {verifiedFiles.length > 0 && (
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t" />
@@ -233,15 +270,28 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
                 <Plus className="w-4 h-4 mr-2" />
                 Criar Novo Arquivo CRM
               </Button>
+            </div>
 
-              <Button
-                onClick={() => setShowPasswordDialog(true)}
-                className="w-full"
-                variant="outline"
-              >
-                <FolderOpen className="w-4 h-4 mr-2" />
-                {supportsFileSystem ? "Abrir do Sistema de Arquivos" : "Carregar do Dispositivo"}
-              </Button>
+            {/* Seção de Restaurar Backup - separada e secundária */}
+            <div className="pt-4 border-t">
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <HardDrive className="w-4 h-4" />
+                  Restaurar Backup
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  Importe um arquivo .enc salvo anteriormente para restaurar seus dados
+                </p>
+                <Button
+                  onClick={() => setShowImportDialog(true)}
+                  className="w-full"
+                  variant="outline"
+                  size="sm"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Importar Arquivo .enc
+                </Button>
+              </div>
             </div>
 
             <div className="text-xs text-center text-muted-foreground space-y-1">
@@ -253,51 +303,14 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
         </Card>
       </div>
 
-      {/* Password Dialog for Quick Open */}
-      <Dialog open={showPasswordDialog && !selectedFileName} onOpenChange={setShowPasswordDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Abrir Arquivo do {supportsFileSystem ? "Sistema de Arquivos" : "Dispositivo"}</DialogTitle>
-            <DialogDescription>
-              Insira sua senha mestra para descriptografar o arquivo
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="fs-password" className="flex items-center gap-2">
-                <Lock className="w-4 h-4" />
-                Senha
-              </Label>
-              <Input
-                id="fs-password"
-                type="password"
-                placeholder="Insira a senha"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleLoadFromFileSystem()}
-                onFocus={(e) => {
-                  setTimeout(() => {
-                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }, 300);
-                }}
-                disabled={isLoading}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPasswordDialog(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleLoadFromFileSystem} disabled={isLoading}>
-              <Upload className="w-4 h-4 mr-2" />
-              Abrir Arquivo
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Password Dialog for Registry File */}
-      <Dialog open={showPasswordDialog && !!selectedFileName} onOpenChange={setShowPasswordDialog}>
+      {/* Password Dialog for Opening File */}
+      <Dialog open={showPasswordDialog} onOpenChange={(open) => {
+        setShowPasswordDialog(open);
+        if (!open) {
+          setSelectedFileName("");
+          setPassword("");
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Abrir {selectedFileName}</DialogTitle>
@@ -338,6 +351,63 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
             </Button>
             <Button onClick={handlePasswordSubmit} disabled={isLoading}>
               Abrir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Backup Dialog */}
+      <Dialog open={showImportDialog} onOpenChange={(open) => {
+        setShowImportDialog(open);
+        if (!open) {
+          setSelectedFileName("");
+          setPassword("");
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Importar Backup</DialogTitle>
+            <DialogDescription>
+              {selectedFileName 
+                ? `Selecione o arquivo de backup para "${selectedFileName}"`
+                : "Selecione um arquivo .enc e insira a senha para restaurar"
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="import-password" className="flex items-center gap-2">
+                <Lock className="w-4 h-4" />
+                Senha do Backup
+              </Label>
+              <Input
+                id="import-password"
+                type="password"
+                placeholder="Insira a senha do arquivo"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleImportSubmit()}
+                onFocus={(e) => {
+                  setTimeout(() => {
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 300);
+                }}
+                disabled={isLoading}
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowImportDialog(false);
+              setSelectedFileName("");
+              setPassword("");
+            }}>
+              Cancelar
+            </Button>
+            <Button onClick={handleImportSubmit} disabled={isLoading}>
+              <Upload className="w-4 h-4 mr-2" />
+              Selecionar e Importar
             </Button>
           </DialogFooter>
         </DialogContent>
