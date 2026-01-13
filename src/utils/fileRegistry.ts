@@ -1,4 +1,5 @@
 import type { CRMType } from "@/types/crmData";
+import { fileExistsInIndexedDB, getAllFilesFromIndexedDB } from "@/utils/indexedDB";
 
 export interface FileRegistryEntry {
   fileName: string;
@@ -8,6 +9,10 @@ export interface FileRegistryEntry {
   itemCount: number; // opportunities for sales, stores for workforce
   // Legacy field for backwards compatibility
   opportunityCount?: number;
+}
+
+export interface VerifiedFileEntry extends FileRegistryEntry {
+  hasData: boolean;
 }
 
 const REGISTRY_KEY = "crm-file-registry";
@@ -99,4 +104,65 @@ export function getItemCountLabel(entry: FileRegistryEntry): string {
     return `${entry.itemCount} loja${entry.itemCount !== 1 ? "s" : ""}`;
   }
   return `${entry.itemCount} oportunidade${entry.itemCount !== 1 ? "s" : ""}`;
+}
+
+/**
+ * Verifica a integridade de todos os arquivos no Registry
+ * Retorna lista com status de cada arquivo (se os dados existem no IndexedDB)
+ */
+export async function verifyRegistryIntegrity(): Promise<VerifiedFileEntry[]> {
+  const registry = getFileRegistry();
+  
+  const verified = await Promise.all(
+    registry.map(async (file) => {
+      const hasData = await fileExistsInIndexedDB(file.fileName);
+      return {
+        ...file,
+        hasData,
+      };
+    })
+  );
+  
+  console.log("[FileRegistry] Verified integrity:", verified.map(f => ({ name: f.fileName, hasData: f.hasData })));
+  return verified;
+}
+
+/**
+ * Sincroniza o Registry com o IndexedDB
+ * - Adiciona arquivos que existem no IndexedDB mas não no Registry
+ * - Marca arquivos órfãos (no Registry mas não no IndexedDB)
+ */
+export async function syncRegistryWithIndexedDB(): Promise<{
+  added: string[];
+  orphaned: string[];
+}> {
+  const registry = getFileRegistry();
+  const indexedDBFiles = await getAllFilesFromIndexedDB();
+  
+  const registryNames = new Set(registry.map(r => r.fileName));
+  const indexedDBNames = new Set(indexedDBFiles);
+  
+  // Arquivos no IndexedDB que não estão no Registry
+  const added: string[] = [];
+  for (const fileName of indexedDBFiles) {
+    if (!registryNames.has(fileName)) {
+      // Adiciona ao registry com valores padrão
+      addFileToRegistry({
+        fileName,
+        lastModified: new Date().toISOString(),
+        lastOpened: new Date().toISOString(),
+        crmType: "sales", // Padrão, será atualizado ao abrir
+        itemCount: 0,
+      });
+      added.push(fileName);
+    }
+  }
+  
+  // Arquivos no Registry que não estão no IndexedDB
+  const orphaned = registry
+    .filter(r => !indexedDBNames.has(r.fileName))
+    .map(r => r.fileName);
+  
+  console.log("[FileRegistry] Sync result:", { added, orphaned });
+  return { added, orphaned };
 }
