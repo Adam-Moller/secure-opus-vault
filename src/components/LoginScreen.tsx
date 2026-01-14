@@ -215,8 +215,8 @@ export const LoginScreen = ({ onLogin, onCreateNew }: LoginScreenProps) => {
 
   return (
     <>
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/30 to-background p-4">
-        <Card className="w-full max-w-2xl shadow-lg">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/30 to-background p-4 overflow-y-auto pb-safe">
+        <Card className="w-full max-w-2xl shadow-lg max-h-[90vh] overflow-y-auto">
           <CardHeader className="text-center space-y-2">
             <div className="flex justify-center mb-4">
               <div className="p-4 bg-primary/10 rounded-full">

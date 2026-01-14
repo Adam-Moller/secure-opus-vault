@@ -71,8 +71,8 @@ export function IconPicker({ selectedIcon, onSelectIcon }: IconPickerProps) {
         />
       </div>
 
-      <ScrollArea className="h-48 border rounded-lg p-2">
-        <div className="grid grid-cols-6 gap-2">
+      <ScrollArea className="h-40 sm:h-48 border rounded-lg p-2">
+        <div className="grid grid-cols-5 sm:grid-cols-6 gap-2">
           {filteredIcons.map((iconName) => {
             const IconComponent = getIcon(iconName);
             if (!IconComponent) return null;
