@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -182,103 +182,105 @@ export function BadgeTemplateModal({
             </div>
           ) : (
             // Badge Form View
-            <ScrollArea className="flex-1 max-h-[60vh] sm:max-h-[70vh]">
-              <div className="space-y-6 pr-4 pb-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium">
-                    {editingBadge ? "Editar Badge" : "Novo Badge"}
-                  </h3>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setIsFormOpen(false);
-                      resetForm();
-                    }}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-
-                {/* Preview */}
-                <div className="flex items-center gap-4 p-4 rounded-lg border bg-muted/50">
-                  <div
-                    className="w-16 h-16 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: `${cor}30` }}
-                  >
-                    {(() => {
-                      const IconComponent = getIcon(icone);
-                      return IconComponent ? (
-                        <IconComponent className="w-8 h-8" style={{ color: cor }} />
-                      ) : null;
-                    })()}
+            <>
+              <div className="flex-1 overflow-y-auto px-1 max-h-[50vh] sm:max-h-[60vh]">
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium">
+                      {editingBadge ? "Editar Badge" : "Novo Badge"}
+                    </h3>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setIsFormOpen(false);
+                        resetForm();
+                      }}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <div>
-                    <p className="font-semibold text-lg">{nome || "Nome do Badge"}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {descricao || "Descrição do badge"}
-                    </p>
+
+                  {/* Preview */}
+                  <div className="flex items-center gap-4 p-4 rounded-lg border bg-muted/50">
+                    <div
+                      className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${cor}30` }}
+                    >
+                      {(() => {
+                        const IconComponent = getIcon(icone);
+                        return IconComponent ? (
+                          <IconComponent className="w-7 h-7" style={{ color: cor }} />
+                        ) : null;
+                      })()}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-lg">{nome || "Nome do Badge"}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {descricao || "Descrição do badge"}
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                {/* Nome */}
-                <div className="space-y-2">
-                  <Label htmlFor="badge-nome">Nome do Badge *</Label>
-                  <Input
-                    id="badge-nome"
-                    value={nome}
-                    onChange={(e) => setNome(e.target.value)}
-                    placeholder="Ex: Estrela do Mês, Top Vendedor, etc."
-                  />
-                </div>
+                  {/* Nome */}
+                  <div className="space-y-2">
+                    <Label htmlFor="badge-nome">Nome do Badge *</Label>
+                    <Input
+                      id="badge-nome"
+                      value={nome}
+                      onChange={(e) => setNome(e.target.value)}
+                      placeholder="Ex: Estrela do Mês, Top Vendedor, etc."
+                    />
+                  </div>
 
-                {/* Descrição */}
-                <div className="space-y-2">
-                  <Label htmlFor="badge-descricao">Descrição</Label>
-                  <Textarea
-                    id="badge-descricao"
-                    value={descricao}
-                    onChange={(e) => setDescricao(e.target.value)}
-                    placeholder="Descreva o que este badge representa..."
-                    rows={2}
-                  />
-                </div>
+                  {/* Descrição */}
+                  <div className="space-y-2">
+                    <Label htmlFor="badge-descricao">Descrição</Label>
+                    <Textarea
+                      id="badge-descricao"
+                      value={descricao}
+                      onChange={(e) => setDescricao(e.target.value)}
+                      placeholder="Descreva o que este badge representa..."
+                      rows={2}
+                    />
+                  </div>
 
-                {/* Ícone */}
-                <div className="space-y-2">
-                  <Label>Ícone</Label>
-                  <IconPicker selectedIcon={icone} onSelectIcon={setIcone} />
-                </div>
+                  {/* Ícone */}
+                  <div className="space-y-2">
+                    <Label>Ícone</Label>
+                    <IconPicker selectedIcon={icone} onSelectIcon={setIcone} />
+                  </div>
 
-                {/* Cor */}
-                <div className="space-y-2">
-                  <Label>Cor</Label>
-                  <ColorPicker selectedColor={cor} onSelectColor={setCor} />
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-3 pt-4">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => {
-                      setIsFormOpen(false);
-                      resetForm();
-                    }}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    className="flex-1"
-                    onClick={handleSave}
-                    disabled={!nome.trim()}
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    {editingBadge ? "Salvar Alterações" : "Criar Badge"}
-                  </Button>
+                  {/* Cor */}
+                  <div className="space-y-2">
+                    <Label>Cor</Label>
+                    <ColorPicker selectedColor={cor} onSelectColor={setCor} />
+                  </div>
                 </div>
               </div>
-            </ScrollArea>
+
+              {/* Fixed Footer with Actions */}
+              <DialogFooter className="flex-shrink-0 pt-4 border-t mt-4 gap-3 sm:gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setIsFormOpen(false);
+                    resetForm();
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleSave}
+                  disabled={!nome.trim()}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {editingBadge ? "Salvar" : "Criar Badge"}
+                </Button>
+              </DialogFooter>
+            </>
           )}
         </DialogContent>
       </Dialog>

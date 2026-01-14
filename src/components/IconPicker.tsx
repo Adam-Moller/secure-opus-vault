@@ -1,23 +1,45 @@
-import { useState, useMemo } from "react";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search } from "lucide-react";
 import * as Icons from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-// Popular icons for badges
-const popularIconNames = [
-  "Star", "Award", "Trophy", "Medal", "Target", "Flag",
-  "Heart", "ThumbsUp", "Smile", "Zap", "Flame", "Rocket",
-  "Crown", "Gem", "Shield", "CheckCircle", "BadgeCheck",
-  "GraduationCap", "Briefcase", "Users", "UserCheck",
-  "CalendarCheck", "Clock", "TrendingUp", "BarChart",
-  "DollarSign", "Percent", "Gift", "Package", "ShoppingBag",
-  "Store", "Building", "Home", "MapPin", "Navigation",
-  "Phone", "Mail", "MessageCircle", "Bell", "Bookmark",
-  "Folder", "FileText", "Clipboard", "Edit", "Settings",
-  "Coffee", "Sun", "Moon", "Cloud", "Umbrella",
-  "Sparkles", "PartyPopper", "Cake", "Music", "Camera"
+// Popular icons for badges with Portuguese labels
+const popularIcons = [
+  { name: "Star", label: "Estrela" },
+  { name: "Award", label: "Prêmio" },
+  { name: "Trophy", label: "Troféu" },
+  { name: "Medal", label: "Medalha" },
+  { name: "Target", label: "Alvo" },
+  { name: "Heart", label: "Coração" },
+  { name: "ThumbsUp", label: "Joinha" },
+  { name: "Flame", label: "Chama" },
+  { name: "Rocket", label: "Foguete" },
+  { name: "Crown", label: "Coroa" },
+  { name: "Gem", label: "Diamante" },
+  { name: "Shield", label: "Escudo" },
+  { name: "CheckCircle", label: "Check" },
+  { name: "BadgeCheck", label: "Verificado" },
+  { name: "GraduationCap", label: "Formatura" },
+  { name: "Briefcase", label: "Maleta" },
+  { name: "TrendingUp", label: "Crescimento" },
+  { name: "DollarSign", label: "Dinheiro" },
+  { name: "Gift", label: "Presente" },
+  { name: "Sparkles", label: "Brilho" },
+  { name: "Zap", label: "Raio" },
+  { name: "Users", label: "Equipe" },
+  { name: "UserCheck", label: "Usuário OK" },
+  { name: "Flag", label: "Bandeira" },
+  { name: "Smile", label: "Sorriso" },
+  { name: "Coffee", label: "Café" },
+  { name: "Sun", label: "Sol" },
+  { name: "PartyPopper", label: "Festa" },
+  { name: "Music", label: "Música" },
+  { name: "Camera", label: "Câmera" },
 ];
 
 interface IconPickerProps {
@@ -26,15 +48,6 @@ interface IconPickerProps {
 }
 
 export function IconPicker({ selectedIcon, onSelectIcon }: IconPickerProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const filteredIcons = useMemo(() => {
-    if (!searchTerm) return popularIconNames;
-    return popularIconNames.filter(name =>
-      name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [searchTerm]);
-
   const getIcon = (iconName: string): LucideIcon | null => {
     const IconComponent = (Icons as unknown as Record<string, LucideIcon>)[iconName];
     if (IconComponent && typeof IconComponent === 'function') {
@@ -44,67 +57,35 @@ export function IconPicker({ selectedIcon, onSelectIcon }: IconPickerProps) {
   };
 
   const SelectedIconComponent = getIcon(selectedIcon);
+  const selectedLabel = popularIcons.find(i => i.name === selectedIcon)?.label || selectedIcon;
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-lg border-2 border-primary flex items-center justify-center bg-muted">
-          {SelectedIconComponent ? (
-            <SelectedIconComponent className="w-6 h-6 text-primary" />
-          ) : (
-            <span className="text-xs text-muted-foreground">?</span>
-          )}
-        </div>
-        <div className="flex-1">
-          <p className="text-sm font-medium">Ícone selecionado</p>
-          <p className="text-xs text-muted-foreground">{selectedIcon || "Nenhum"}</p>
-        </div>
-      </div>
-
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar ícone..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      <ScrollArea className="h-40 sm:h-48 border rounded-lg p-2">
-        <div className="grid grid-cols-5 sm:grid-cols-6 gap-2">
-          {filteredIcons.map((iconName) => {
-            const IconComponent = getIcon(iconName);
-            if (!IconComponent) return null;
-            
-            const isSelected = selectedIcon === iconName;
-            
+    <div className="space-y-2">
+      <Select value={selectedIcon} onValueChange={onSelectIcon}>
+        <SelectTrigger className="w-full h-12">
+          <SelectValue>
+            <div className="flex items-center gap-3">
+              {SelectedIconComponent && (
+                <SelectedIconComponent className="w-5 h-5 text-primary" />
+              )}
+              <span>{selectedLabel}</span>
+            </div>
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent className="max-h-60 bg-background border shadow-lg z-50">
+          {popularIcons.map(({ name, label }) => {
+            const IconComponent = getIcon(name);
             return (
-              <button
-                key={iconName}
-                type="button"
-                onClick={() => onSelectIcon(iconName)}
-                className={`
-                  w-10 h-10 rounded-lg flex items-center justify-center
-                  transition-all duration-200 hover:scale-110
-                  ${isSelected 
-                    ? 'bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2' 
-                    : 'bg-muted hover:bg-accent'
-                  }
-                `}
-                title={iconName}
-              >
-                <IconComponent className="w-5 h-5" />
-              </button>
+              <SelectItem key={name} value={name}>
+                <div className="flex items-center gap-3">
+                  {IconComponent && <IconComponent className="w-5 h-5" />}
+                  <span>{label}</span>
+                </div>
+              </SelectItem>
             );
           })}
-        </div>
-        {filteredIcons.length === 0 && (
-          <p className="text-center text-sm text-muted-foreground py-4">
-            Nenhum ícone encontrado
-          </p>
-        )}
-      </ScrollArea>
+        </SelectContent>
+      </Select>
     </div>
   );
 }
