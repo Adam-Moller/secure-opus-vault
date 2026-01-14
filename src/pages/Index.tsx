@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Download, LogOut, Save, Search } from "lucide-react";
 import type { Opportunity, EncryptedData, Interaction } from "@/types/opportunity";
-import type { Store, WorkforceData } from "@/types/store";
+import type { Store, WorkforceData, BadgeTemplate } from "@/types/store";
 import type { CRMType } from "@/types/crmData";
 import { ensureWorkforceData } from "@/utils/dataMigration";
 import {
@@ -299,6 +299,15 @@ const Index = () => {
     });
   };
 
+  // Badge templates handler
+  const handleSaveBadgeTemplates = (badges: BadgeTemplate[]) => {
+    console.log("[Index] Saving badge templates:", badges.length);
+    setWorkforceData(prev => ({
+      ...prev,
+      badgeTemplates: badges
+    }));
+  };
+
   const handleDeleteStore = (id: string) => {
     if (!confirm("Tem certeza que deseja excluir esta loja?")) return;
 
@@ -513,6 +522,8 @@ const Index = () => {
             stores={workforceData.stores}
             onSaveStore={handleSaveStore}
             onDeleteStore={handleDeleteStore}
+            badgeTemplates={workforceData.badgeTemplates}
+            onSaveBadgeTemplates={handleSaveBadgeTemplates}
           />
         )}
       </main>

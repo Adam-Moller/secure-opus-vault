@@ -182,8 +182,8 @@ export function BadgeTemplateModal({
             </div>
           ) : (
             // Badge Form View
-            <ScrollArea className="flex-1 max-h-[70vh]">
-              <div className="space-y-6 pr-4">
+            <ScrollArea className="flex-1 max-h-[60vh] sm:max-h-[70vh]">
+              <div className="space-y-6 pr-4 pb-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-medium">
                     {editingBadge ? "Editar Badge" : "Novo Badge"}

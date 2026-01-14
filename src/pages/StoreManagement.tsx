@@ -25,12 +25,16 @@ interface StoreManagementProps {
   stores: Store[];
   onSaveStore: (store: Store) => void;
   onDeleteStore: (id: string) => void;
+  badgeTemplates: BadgeTemplate[];
+  onSaveBadgeTemplates: (badges: BadgeTemplate[]) => void;
 }
 
 export const StoreManagement = ({ 
   stores, 
   onSaveStore, 
-  onDeleteStore
+  onDeleteStore,
+  badgeTemplates,
+  onSaveBadgeTemplates
 }: StoreManagementProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -50,7 +54,6 @@ export const StoreManagement = ({
   const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isBadgeModalOpen, setIsBadgeModalOpen] = useState(false);
-  const [badgeTemplates, setBadgeTemplates] = useState<BadgeTemplate[]>([]);
   const [editingStore, setEditingStore] = useState<Store | undefined>();
   const [selectedStoreForVisit, setSelectedStoreForVisit] = useState<Store | undefined>();
   const [selectedStoreForEmployees, setSelectedStoreForEmployees] = useState<Store | undefined>();
@@ -478,7 +481,7 @@ export const StoreManagement = ({
         open={isBadgeModalOpen}
         onClose={() => setIsBadgeModalOpen(false)}
         badges={badgeTemplates}
-        onSaveBadges={setBadgeTemplates}
+        onSaveBadges={onSaveBadgeTemplates}
       />
     </>
   );
